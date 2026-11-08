@@ -65,10 +65,9 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   background: var(--void);
-}
-
-html.splash-active {
-  overflow: hidden;
+  /* Always reserve the scrollbar's space, so unlocking scroll as the splash leaves doesn't shift
+     the page sideways or resize the splash canvas mid-transition. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -492,31 +491,35 @@ a {
   z-index: 1;
   min-height: 100vh;
   padding: 26px 24px 40px;
-  transition:
-    opacity 1s ease 0.1s,
-    transform 1.3s var(--ease-out) 0.1s;
+  /* Its own GPU layer from the start, so it is already rendered (under the splash) when it
+     starts to move, instead of being drawn in one big burst on the first frame of the reveal. */
+  will-change: transform;
+  transition: transform 1.3s var(--ease-out) 0.1s;
 }
 
 /* While the splash plays, the page waits behind it; it flies in as the splash warps out.
-   (Opacity + transform only: both run on the GPU, so the reveal stays smooth.) */
+   The page itself only moves — each part fades in on its own (topbar, hero lines, card, footer).
+   Fading the whole page as a group would switch off the card's frosted-glass blur until the
+   fade ended, which made the glass visibly "pop" at the end of the transition. */
 .splash:not(.is-leaving) ~ .page {
-  opacity: 0;
   transform: scale(0.94) translateY(24px);
   animation: page-failsafe 0.8s 9s forwards;
 }
 
-/* Nothing behind the splash is visible, so the backdrop stops animating until it lifts. */
-html.splash-active .space * {
+/* Nothing behind the splash is visible, so the backdrop stops animating until it lifts
+   (toggled on .space by components/Splash.tsx). */
+.space.is-paused * {
   animation-play-state: paused !important;
 }
 
-.splash:not(.is-leaving) ~ .page .rise {
+.splash:not(.is-leaving) ~ .page .rise,
+.splash:not(.is-leaving) ~ .page .topbar,
+.splash:not(.is-leaving) ~ .page .page-foot {
   animation-play-state: paused;
 }
 
 @keyframes page-failsafe {
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -525,9 +528,11 @@ html.splash-active .space * {
   animation: rise 1s var(--ease-out) backwards;
 }
 
+/* Hidden states use opacity 0.001 rather than 0: visually identical, but the browser keeps the
+   element rendered behind the splash, so nothing has to be drawn from scratch as it appears. */
 @keyframes rise {
   from {
-    opacity: 0;
+    opacity: 0.001;
     transform: translateY(26px);
   }
   to {
@@ -543,6 +548,7 @@ html.splash-active .space * {
   gap: 10px;
   margin: 0 auto 34px;
   text-align: center;
+  animation: rise 1s var(--ease-out) 0.05s backwards;
 }
 
 .logo-bar {
@@ -926,7 +932,7 @@ html.splash-active .space * {
 
 @keyframes card-in {
   from {
-    opacity: 0;
+    opacity: 0.001; /* not 0 — keeps the card pre-rendered behind the splash (see @keyframes rise) */
     transform: translateY(40px) scale(0.97);
   }
   to {
@@ -2426,6 +2432,7 @@ html.splash-active .space * {
   padding-top: 26px;
   border-top: 1px solid var(--line);
   text-align: center;
+  animation: rise 1s var(--ease-out) 0.6s backwards;
 }
 
 .page-foot p {
@@ -2478,7 +2485,6 @@ html.splash-active .space * {
 @keyframes splash-out {
   0%,
   35% {
-    background-color: transparent;
     opacity: 1;
   }
   100% {
@@ -2611,9 +2617,22 @@ html.splash-active .space * {
   animation: warp-out 0.9s cubic-bezier(0.6, 0, 0.3, 1) forwards;
 }
 
-.splash.is-leaving .splash-halftone {
-  transition: opacity 0.5s;
-  opacity: 0 !important;
+/* The halftones sit in a wrapper that fades and drifts out on its own, so their entrance
+   animation is never interrupted mid-way (the old !important override made them snap off). */
+.splash-halftones {
+  position: absolute;
+  inset: 0;
+}
+
+.splash.is-leaving .splash-halftones {
+  animation: ht-out 0.7s ease-in forwards;
+}
+
+@keyframes ht-out {
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+  }
 }
 
 @keyframes warp-out {
@@ -2958,35 +2977,35 @@ html.splash-active .space * {
 }
 
 /* the quick replay when the visitor has already seen the full intro in this tab */
-.splash-quick .splash-logos img {
+.splash.is-quick .splash-logos img {
   animation-delay: 0.05s, 1s;
 }
-.splash-quick .splash-kicker {
+.splash.is-quick .splash-kicker {
   animation-delay: 0.2s;
 }
-.splash-quick .splash-word b {
+.splash.is-quick .splash-word b {
   animation-delay: calc(0.3s + var(--i) * 18ms);
 }
-.splash-quick .splash-sub,
-.splash-quick .splash-halftone-tr,
-.splash-quick .splash-halftone-bl {
+.splash.is-quick .splash-sub,
+.splash.is-quick .splash-halftone-tr,
+.splash.is-quick .splash-halftone-bl {
   animation-delay: 0.6s;
 }
-.splash-quick .splash-launch {
+.splash.is-quick .splash-launch {
   animation-delay: 0.7s;
 }
-.splash-quick .launch-bar i {
+.splash.is-quick .launch-bar i {
   animation-duration: 1.3s;
   animation-delay: 0.8s;
 }
-.splash-quick .ring {
+.splash.is-quick .ring {
   animation-delay: 0s;
   animation-duration: 1s;
 }
-.splash-quick .orbit-sat {
+.splash.is-quick .orbit-sat {
   animation-delay: 0.4s, 0s;
 }
-.splash-quick .splash-skip {
+.splash.is-quick .splash-skip {
   animation-delay: 0.4s;
 }
 

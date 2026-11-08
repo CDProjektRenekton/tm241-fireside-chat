@@ -6,7 +6,9 @@ import { EVENT } from '@/lib/config';
 const SHOW_MS = 5200;
 const SHOW_MS_REPEAT = 2300; // shorter when the visitor has already seen it in this tab
 const SHOW_MS_REDUCED = 1200;
-const LEAVE_MS = 1000;
+// The fade-out (splash-out) lasts 1 s; unmount a little after it ends so the splash is never
+// removed while still faintly visible.
+const LEAVE_MS = 1150;
 const SEEN_KEY = 'tm241-fc-splash-seen';
 
 const TITLE = ['Leading', 'from', 'the', 'Start'];
@@ -20,6 +22,7 @@ type Phase = 'show' | 'leaving' | 'gone';
  */
 export default function Splash() {
   const [phase, setPhase] = useState<Phase>('show');
+  const [quick, setQuick] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const warpRef = useRef(0); // 0 = cruise, 1 = jump to warp (leaving)
 
@@ -34,7 +37,7 @@ export default function Splash() {
     } catch {
       /* storage unavailable */
     }
-    if (seen) document.documentElement.classList.add('splash-quick');
+    if (seen) setQuick(true);
     const t = window.setTimeout(skip, reduce ? SHOW_MS_REDUCED : seen ? SHOW_MS_REPEAT : SHOW_MS);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') skip();
@@ -47,9 +50,11 @@ export default function Splash() {
   }, [skip]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('splash-active', phase === 'show');
-    if (phase === 'gone') root.classList.remove('splash-quick');
+    // Lock scrolling and pause the hidden backdrop while the splash covers the page. These touch
+    // only <html>'s inline overflow and the .space element — toggling classes on <html> would make
+    // the browser re-check the styles of the entire page right in the middle of the transition.
+    document.documentElement.style.overflow = phase === 'show' ? 'hidden' : '';
+    document.querySelector('.space')?.classList.toggle('is-paused', phase === 'show');
     if (phase !== 'leaving') return;
     warpRef.current = 1;
     try {
@@ -73,8 +78,13 @@ export default function Splash() {
     // 1.5× is visually indistinguishable for thin streaks and draws far fewer pixels on retina screens.
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const resize = () => {
-      w = window.innerWidth;
-      h = window.innerHeight;
+      const nw = window.innerWidth;
+      const nh = window.innerHeight;
+      // Resizing a canvas wipes it, which can flash a blank frame. Skip no-op resizes and small
+      // height-only changes (a phone's address bar sliding in/out); CSS stretches the canvas to fit.
+      if (w && nw === w && Math.abs(nh - h) < 160) return;
+      w = nw;
+      h = nh;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -177,7 +187,7 @@ export default function Splash() {
   let letter = 0;
   return (
     <div
-      className={`splash${phase === 'leaving' ? ' is-leaving' : ''}`}
+      className={`splash${quick ? ' is-quick' : ''}${phase === 'leaving' ? ' is-leaving' : ''}`}
       onClick={skip}
       role="status"
       aria-live="polite"
@@ -189,8 +199,10 @@ export default function Splash() {
         <span />
       </div>
       <canvas className="splash-warp" ref={canvasRef} />
-      <div className="splash-halftone splash-halftone-tr" />
-      <div className="splash-halftone splash-halftone-bl" />
+      <div className="splash-halftones">
+        <div className="splash-halftone splash-halftone-tr" />
+        <div className="splash-halftone splash-halftone-bl" />
+      </div>
 
       <div className="splash-content">
         <div className="splash-orbit">
