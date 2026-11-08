@@ -36,7 +36,7 @@
   --ink-3: #8f9bc0;
   --line: rgba(173, 227, 242, 0.14);
   --line-strong: rgba(173, 227, 242, 0.3);
-  --glass: rgba(9, 10, 44, 0.66);
+  --glass: rgba(9, 10, 44, 0.72);
   --glass-2: rgba(255, 255, 255, 0.035);
   --input: rgba(3, 1, 30, 0.55);
   --focus-ring: rgba(94, 182, 211, 0.32);
@@ -147,20 +147,18 @@ a {
 }
 
 /* the cyan "fabric" swoosh that crosses the pubmat */
+/* Performance: the soft edges come from layered elliptical gradients rather than `filter: blur()`
+   or masks, so each cloud is rasterized once and the drift is a cheap GPU transform. */
 .neb-cyan {
   width: 150vmax;
-  height: 34vmax;
+  height: 40vmax;
   left: -46vmax;
-  top: 50%;
-  background: linear-gradient(
-    90deg,
-    transparent 4%,
-    rgba(138, 209, 226, 0.78) 30%,
-    rgba(94, 182, 211, 0.62) 50%,
-    rgba(42, 91, 138, 0.42) 70%,
-    transparent 96%
-  );
-  filter: blur(46px);
+  top: 48%;
+  border-radius: 0;
+  background:
+    radial-gradient(40% 50% at 33% 50%, rgba(138, 209, 226, 0.8), rgba(138, 209, 226, 0.36) 45%, transparent 100%),
+    radial-gradient(34% 46% at 52% 50%, rgba(94, 182, 211, 0.58), rgba(94, 182, 211, 0.22) 50%, transparent 100%),
+    radial-gradient(32% 42% at 71% 50%, rgba(42, 91, 138, 0.46), rgba(42, 91, 138, 0.16) 50%, transparent 100%);
   transform: rotate(27deg);
   animation: neb-cyan 34s ease-in-out infinite alternate;
 }
@@ -168,42 +166,53 @@ a {
 /* the darker blue fold above the swoosh */
 .neb-fold {
   width: 120vmax;
-  height: 20vmax;
+  height: 26vmax;
   left: -30vmax;
-  top: 30%;
-  background: linear-gradient(90deg, transparent, rgba(30, 66, 113, 0.75) 35%, rgba(59, 125, 167, 0.45) 60%, transparent);
-  filter: blur(38px);
+  top: 28%;
+  border-radius: 0;
+  background:
+    radial-gradient(38% 50% at 40% 50%, rgba(30, 66, 113, 0.78), rgba(30, 66, 113, 0.32) 50%, transparent 100%),
+    radial-gradient(28% 44% at 62% 50%, rgba(59, 125, 167, 0.46), rgba(59, 125, 167, 0.16) 50%, transparent 100%);
   transform: rotate(23deg);
   animation: neb-fold 41s ease-in-out infinite alternate;
 }
 
 .neb-glow {
-  width: 62vmax;
-  height: 62vmax;
-  left: -24vmax;
-  top: -26vmax;
-  background: radial-gradient(circle, rgba(94, 182, 211, 0.5), rgba(42, 91, 138, 0.2) 45%, transparent 68%);
-  filter: blur(30px);
+  width: 66vmax;
+  height: 66vmax;
+  left: -26vmax;
+  top: -28vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(94, 182, 211, 0.5),
+    rgba(72, 150, 190, 0.32) 35%,
+    rgba(42, 91, 138, 0.14) 62%,
+    transparent 100%
+  );
   animation: neb-glow 28s ease-in-out infinite alternate;
 }
 
 .neb-coral {
-  width: 58vmax;
-  height: 46vmax;
-  right: -20vmax;
-  bottom: -22vmax;
-  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.72), rgba(232, 71, 90, 0.25) 55%, transparent);
-  filter: blur(34px);
+  width: 62vmax;
+  height: 50vmax;
+  right: -22vmax;
+  bottom: -24vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(232, 71, 90, 0.72),
+    rgba(232, 71, 90, 0.42) 38%,
+    rgba(232, 71, 90, 0.14) 70%,
+    transparent 100%
+  );
   animation: neb-coral 30s ease-in-out infinite alternate;
 }
 
 .neb-coral-2 {
-  width: 30vmax;
-  height: 22vmax;
-  left: -14vmax;
-  top: 16%;
-  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.5), transparent);
-  filter: blur(30px);
+  width: 34vmax;
+  height: 26vmax;
+  left: -16vmax;
+  top: 15%;
+  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.5), rgba(232, 71, 90, 0.2) 55%, transparent 100%);
   animation: neb-coral-2 24s ease-in-out infinite alternate;
 }
 
@@ -284,18 +293,11 @@ a {
 }
 
 /* stars */
+/* Parallax layers: moved by components/Parallax.tsx with direct transforms (no style recalc). */
 .par {
   position: absolute;
   inset: -30px;
-  transition: transform 0.9s var(--ease-out);
-}
-
-.par-far {
-  transform: translate3d(calc(var(--px, 0) * -8px), calc(var(--py, 0) * -8px), 0);
-}
-
-.par-near {
-  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -22px), 0);
+  will-change: transform;
 }
 
 .stars {
@@ -303,14 +305,21 @@ a {
   inset: 0;
 }
 
+/* Stars twinkle in a handful of groups, so only a few layers animate instead of every star. */
+.twinkle {
+  position: absolute;
+  inset: 0;
+  animation-name: twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: opacity;
+}
+
 .stars span {
   position: absolute;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.75);
-  animation-name: twinkle;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
 }
 
 .stars span.tint-c {
@@ -331,11 +340,9 @@ a {
   0%,
   100% {
     opacity: 0.25;
-    transform: scale(0.7);
   }
   50% {
     opacity: 1;
-    transform: scale(1.15);
   }
 }
 
@@ -430,6 +437,11 @@ a {
   background: url('/halftone.svg') no-repeat center / contain;
 }
 
+.halftone {
+  /* pins the raster scale so the slow zoom never re-renders the ~1,000 dots */
+  will-change: transform;
+}
+
 .halftone-tr {
   top: -3%;
   right: -5%;
@@ -482,16 +494,20 @@ a {
   padding: 26px 24px 40px;
   transition:
     opacity 1s ease 0.1s,
-    transform 1.3s var(--ease-out) 0.1s,
-    filter 1s ease 0.1s;
+    transform 1.3s var(--ease-out) 0.1s;
 }
 
-/* While the splash plays, the page waits behind it; it flies in as the splash warps out. */
+/* While the splash plays, the page waits behind it; it flies in as the splash warps out.
+   (Opacity + transform only: both run on the GPU, so the reveal stays smooth.) */
 .splash:not(.is-leaving) ~ .page {
   opacity: 0;
   transform: scale(0.94) translateY(24px);
-  filter: blur(8px);
   animation: page-failsafe 0.8s 9s forwards;
+}
+
+/* Nothing behind the splash is visible, so the backdrop stops animating until it lifts. */
+html.splash-active .space * {
+  animation-play-state: paused !important;
 }
 
 .splash:not(.is-leaving) ~ .page .rise {
@@ -502,7 +518,6 @@ a {
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -514,12 +529,10 @@ a {
   from {
     opacity: 0;
     transform: translateY(26px);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -691,9 +704,9 @@ a {
   gap: 12px;
   padding: 11px 16px 11px 13px;
   border-radius: 16px;
-  background: rgba(10, 12, 50, 0.55);
+  /* solid tint instead of a live backdrop blur: same look, no per-frame blur work */
+  background: linear-gradient(180deg, rgba(14, 18, 62, 0.78), rgba(8, 10, 44, 0.72));
   border: 1px solid var(--line);
-  backdrop-filter: blur(10px);
 }
 
 .event-chips svg {
@@ -859,19 +872,35 @@ a {
   box-shadow:
     0 50px 120px -50px rgba(0, 0, 0, 0.9),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(16px);
   animation: card-in 1.1s var(--ease-out) 0.35s backwards;
 }
 
-/* a slow light sweep along the card's border */
-.form-card::before {
-  content: '';
+/* A slow light sweep along the card's border (components/CardSweep.tsx). The ring mask is static;
+   only the conic gradient inside it rotates, as a GPU transform — no repaint per frame. */
+.card-sweep {
   position: absolute;
   inset: -1px;
+  z-index: 0;
   border-radius: inherit;
   padding: 1px;
+  overflow: hidden;
+  container-type: size;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.card-sweep i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 145cqmax;
+  height: 145cqmax;
   background: conic-gradient(
-    from var(--sweep, 0deg),
     transparent 0deg,
     rgba(138, 209, 226, 0.9) 40deg,
     transparent 90deg,
@@ -879,37 +908,30 @@ a {
     rgba(242, 112, 124, 0.7) 240deg,
     transparent 290deg
   );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(0deg);
+  will-change: transform;
   animation: sweep 9s linear infinite;
-}
-
-@property --sweep {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
 }
 
 @keyframes sweep {
   to {
-    --sweep: 360deg;
+    transform: translate(-50%, -50%) rotate(360deg);
   }
+}
+
+.form-card > :not(.card-sweep) {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes card-in {
   from {
     opacity: 0;
     transform: translateY(40px) scale(0.97);
-    filter: blur(8px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -1126,12 +1148,10 @@ a {
   from {
     opacity: 0;
     transform: translateX(34px);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -1139,12 +1159,10 @@ a {
   from {
     opacity: 0;
     transform: translateX(-34px);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -2473,38 +2491,42 @@ a {
   inset: 0;
 }
 
+/* soft edges from gradients + static masks instead of filter: blur() (see .neb) */
 .splash-nebula span {
   position: absolute;
   border-radius: 50%;
-  filter: blur(50px);
   opacity: 0;
+  will-change: opacity, scale;
   animation: neb-in 2.4s var(--ease-out) forwards;
 }
 
 .splash-nebula span:nth-child(1) {
-  width: 70vmax;
-  height: 26vmax;
-  left: -22vmax;
-  top: 56%;
+  width: 76vmax;
+  height: 32vmax;
+  left: -24vmax;
+  top: 54%;
+  border-radius: 0;
   transform: rotate(26deg);
-  background: linear-gradient(90deg, transparent, rgba(138, 209, 226, 0.6) 40%, rgba(42, 91, 138, 0.4) 75%, transparent);
+  background:
+    radial-gradient(40% 50% at 40% 50%, rgba(138, 209, 226, 0.62), rgba(138, 209, 226, 0.26) 48%, transparent 100%),
+    radial-gradient(30% 44% at 70% 50%, rgba(42, 91, 138, 0.44), rgba(42, 91, 138, 0.14) 50%, transparent 100%);
 }
 
 .splash-nebula span:nth-child(2) {
-  width: 46vmax;
-  height: 40vmax;
-  right: -16vmax;
-  bottom: -18vmax;
-  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.6), transparent);
+  width: 52vmax;
+  height: 46vmax;
+  right: -18vmax;
+  bottom: -20vmax;
+  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.6), rgba(232, 71, 90, 0.26) 50%, transparent 100%);
   animation-delay: 0.4s;
 }
 
 .splash-nebula span:nth-child(3) {
-  width: 50vmax;
-  height: 50vmax;
-  left: -18vmax;
-  top: -20vmax;
-  background: radial-gradient(closest-side, rgba(94, 182, 211, 0.45), transparent);
+  width: 56vmax;
+  height: 56vmax;
+  left: -20vmax;
+  top: -22vmax;
+  background: radial-gradient(closest-side, rgba(94, 182, 211, 0.45), rgba(94, 182, 211, 0.18) 50%, transparent 100%);
   animation-delay: 0.2s;
 }
 
@@ -2598,7 +2620,6 @@ a {
   to {
     opacity: 0;
     transform: scale(2.2);
-    filter: blur(14px);
   }
 }
 
@@ -3205,7 +3226,7 @@ a {
     animation: none;
   }
 
-  .form-card::before {
+  .card-sweep {
     display: none;
   }
 

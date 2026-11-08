@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { EVENT } from '@/lib/config';
+import CardSweep from '../CardSweep';
 import { Alert, ArrowRight, Lock } from '../Icons';
 
 export default function LoginForm({ configured }: { configured: boolean }) {
@@ -32,6 +33,7 @@ export default function LoginForm({ configured }: { configured: boolean }) {
 
   return (
     <section className="form-card login-card">
+      <CardSweep />
       <div className="login-logos">
         <Image src="/up-seal.png" alt="University of the Philippines" width={480} height={480} priority />
         <Image src="/tmc-logo.png" alt="UP Technology Management Center" width={400} height={400} priority />

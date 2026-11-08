@@ -19,8 +19,6 @@ interface Star {
   l: number;
   t: number;
   s: number;
-  d: number;
-  w: number;
   tint: '' | 'c' | 'r';
 }
 
@@ -32,12 +30,21 @@ function makeStars(count: number, seed: number, maxSize: number): Star[] {
       l: +(r() * 100).toFixed(2),
       t: +(r() * 100).toFixed(2),
       s: +(0.8 + r() * maxSize).toFixed(1),
-      d: +(2.5 + r() * 5).toFixed(1),
-      w: +(r() * 6).toFixed(1),
       tint: roll > 0.86 ? 'c' : roll > 0.78 ? 'r' : '',
     };
   });
 }
+
+// Stars are split into groups that twinkle out of step with each other. Animating a few group
+// layers is far cheaper than animating every star on its own, and still reads as random twinkling.
+const TWINKLE = [
+  { d: 3.1, w: 0 },
+  { d: 4.3, w: 1.2 },
+  { d: 5.2, w: 2.6 },
+  { d: 3.7, w: 3.4 },
+  { d: 6.1, w: 0.7 },
+  { d: 4.8, w: 4.1 },
+];
 
 const FAR = makeStars(70, 7, 1.2);
 const NEAR = makeStars(28, 41, 2.2);
@@ -55,19 +62,18 @@ const SPARKLES = [
 function StarLayer({ stars, className }: { stars: Star[]; className: string }) {
   return (
     <div className={`stars ${className}`}>
-      {stars.map((s, i) => (
-        <span
-          key={i}
-          className={s.tint ? `tint-${s.tint}` : undefined}
-          style={{
-            left: `${s.l}%`,
-            top: `${s.t}%`,
-            width: s.s,
-            height: s.s,
-            animationDuration: `${s.d}s`,
-            animationDelay: `-${s.w}s`,
-          }}
-        />
+      {TWINKLE.map((g, gi) => (
+        <div key={gi} className="twinkle" style={{ animationDuration: `${g.d}s`, animationDelay: `-${g.w}s` }}>
+          {stars
+            .filter((_, i) => i % TWINKLE.length === gi)
+            .map((s, i) => (
+              <span
+                key={i}
+                className={s.tint ? `tint-${s.tint}` : undefined}
+                style={{ left: `${s.l}%`, top: `${s.t}%`, width: s.s, height: s.s }}
+              />
+            ))}
+        </div>
       ))}
     </div>
   );

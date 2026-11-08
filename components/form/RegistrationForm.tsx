@@ -27,6 +27,7 @@ import {
   Shield,
   User,
 } from '../Icons';
+import CardSweep from '../CardSweep';
 import { CardChoice, ChipChoice, fieldId, TextField } from './Fields';
 import { CopyRef, downloadInvite, Liftoff, MissionPass } from './MissionPass';
 
@@ -226,6 +227,7 @@ export default function RegistrationForm() {
     const first = result.data.name.split(' ')[0];
     return (
       <section className="form-card success-card" ref={cardRef} aria-live="polite">
+        <CardSweep />
         <Liftoff />
         <p className="success-script">See you there</p>
         <h2 className="success-title">You&rsquo;re cleared for liftoff!</h2>
@@ -274,6 +276,7 @@ export default function RegistrationForm() {
 
   return (
     <section className="form-card" ref={cardRef} aria-labelledby="form-title">
+      <CardSweep />
       <div className="form-card-head">
         <p className="form-kicker">
           <Rocket width={16} height={16} />

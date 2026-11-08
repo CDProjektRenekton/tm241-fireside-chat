@@ -70,7 +70,8 @@ export default function Splash() {
 
     let w = 0;
     let h = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // 1.5× is visually indistinguishable for thin streaks and draws far fewer pixels on retina screens.
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const resize = () => {
       w = window.innerWidth;
       h = window.innerHeight;
@@ -81,14 +82,26 @@ export default function Splash() {
     resize();
     window.addEventListener('resize', resize);
 
-    const COLORS = ['255,255,255', '255,255,255', '255,255,255', '173,227,242', '138,209,226', '242,112,124'];
+    // Streaks are drawn in batches: one path per colour × brightness band (4 × 4 = 16 strokes per
+    // frame) instead of one stroke per star.
+    const COLORS = ['255,255,255', '173,227,242', '138,209,226', '242,112,124'];
+    const COLOR_ODDS = [0, 0, 0, 1, 2, 3]; // mostly white, some cyan, a little coral
+    const BANDS = [
+      { alpha: 0.3, width: 0.7 },
+      { alpha: 0.55, width: 1.2 },
+      { alpha: 0.82, width: 1.8 },
+      { alpha: 1, width: 2.6 },
+    ];
+    const STYLES = COLORS.map((c) => BANDS.map((b) => `rgba(${c},${b.alpha})`));
+    const batches: number[][] = Array.from({ length: COLORS.length * BANDS.length }, () => []);
+
     const count = Math.min(520, Math.round((w * h) / 2600));
     const spawn = (z = Math.random()) => ({
       x: (Math.random() * 2 - 1) * 1.2,
       y: (Math.random() * 2 - 1) * 1.2,
       z: Math.max(0.02, z),
       pz: Math.max(0.02, z),
-      c: COLORS[Math.floor(Math.random() * COLORS.length)],
+      c: COLOR_ODDS[Math.floor(Math.random() * COLOR_ODDS.length)],
     });
     const stars = Array.from({ length: count }, () => spawn());
 
@@ -107,6 +120,8 @@ export default function Splash() {
     };
 
     const frame = (now: number) => {
+      // The splash unmounts its canvas when it finishes; stop drawing instead of looping forever.
+      if (!canvas.isConnected) return;
       const dt = Math.min(48, now - last) / 16.67;
       last = now;
       speed += (target(now - start) - speed) * (warpRef.current ? 0.08 : 0.12);
@@ -114,6 +129,7 @@ export default function Splash() {
       const cx = w / 2;
       const cy = h / 2;
       const fov = Math.max(w, h) * 0.5;
+      for (const b of batches) b.length = 0;
       for (const s of stars) {
         s.pz = s.z;
         s.z -= speed * dt;
@@ -129,13 +145,21 @@ export default function Splash() {
           Object.assign(s, spawn(1));
           continue;
         }
-        const near = 1 - s.z;
-        ctx.strokeStyle = `rgba(${s.c},${Math.min(1, near * 1.25)})`;
-        ctx.lineWidth = Math.max(0.6, near * 2.6);
-        ctx.beginPath();
-        ctx.moveTo(px, py);
+        const band = Math.min(BANDS.length - 1, Math.floor((1 - s.z) * BANDS.length));
         // Keep a minimum length so slow stars still read as points.
-        ctx.lineTo(sx + (sx === px ? 0.6 : 0), sy + (sy === py ? 0.6 : 0));
+        batches[s.c * BANDS.length + band].push(px, py, sx + (sx === px ? 0.6 : 0), sy + (sy === py ? 0.6 : 0));
+      }
+      ctx.lineCap = 'round';
+      for (let i = 0; i < batches.length; i++) {
+        const seg = batches[i];
+        if (!seg.length) continue;
+        ctx.strokeStyle = STYLES[Math.floor(i / BANDS.length)][i % BANDS.length];
+        ctx.lineWidth = BANDS[i % BANDS.length].width;
+        ctx.beginPath();
+        for (let k = 0; k < seg.length; k += 4) {
+          ctx.moveTo(seg[k], seg[k + 1]);
+          ctx.lineTo(seg[k + 2], seg[k + 3]);
+        }
         ctx.stroke();
       }
       raf = window.requestAnimationFrame(frame);
