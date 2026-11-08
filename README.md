@@ -72,11 +72,22 @@ everything is connected.
 
 ## Deploy
 
-The GitHub repository is connected to Vercel, so every `git push` to `main` redeploys automatically.
+The GitHub repository [CDProjektRenekton/tm241-fireside-chat](https://github.com/CDProjektRenekton/tm241-fireside-chat)
+is connected to the Vercel project **tm241-fireside-chat** in the **cdprojektrenektons-projects** team,
+so every `git push` to `main` redeploys automatically.
+
 To (re)send the secrets from `.env.local` to Vercel and redeploy in one step:
 
 ```bash
 npm run setup:vercel
+```
+
+Extra arguments go to every Vercel CLI call. On a computer whose Vercel CLI is signed in to a different
+account, keep a separate sign-in for this team and pass it along:
+
+```bash
+npx vercel@60.1.3 login -Q "%APPDATA%/vercel-cdprojektrenekton"
+npm run setup:vercel -- --scope cdprojektrenektons-projects -Q "%APPDATA%/vercel-cdprojektrenekton"
 ```
 
 ## Airtable

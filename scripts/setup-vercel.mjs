@@ -10,6 +10,10 @@
 // 4. Redeploys production so the values take effect.
 //
 // Values are passed to the Vercel CLI through stdin, so they are never printed.
+//
+// Extra arguments are forwarded to every Vercel CLI call, e.g. to use a second Vercel sign-in:
+//
+//   npm run setup:vercel -- --scope cdprojektrenektons-projects -Q "%APPDATA%/vercel-cdprojektrenekton"
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -19,11 +23,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = 'vercel@60.1.3';
 const TARGETS = ['production', 'preview'];
+const EXTRA = process.argv.slice(2).map((a) => `"${a.replace(/"/g, '')}"`);
 
 function vercel(args, { input, capture = false } = {}) {
   const stdio = input !== undefined ? ['pipe', 'inherit', 'inherit'] : capture ? ['ignore', 'pipe', 'pipe'] : 'inherit';
-  // Arguments are fixed strings from this script; secret values only travel through stdin.
-  const command = ['npx', '--yes', CLI, ...args].join(' ');
+  // Arguments are fixed strings from this script (plus the caller's flags); secret values only travel through stdin.
+  const command = ['npx', '--yes', CLI, ...args, ...EXTRA].join(' ');
   return spawnSync(command, { cwd: ROOT, stdio, input, encoding: 'utf8', shell: true });
 }
 
