@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   createSessionToken,
   dashboardConfigured,
+  deskPasswordSet,
   roleForPassword,
   sameOrigin,
   SESSION_COOKIE,
@@ -26,7 +27,13 @@ export async function POST(req: Request) {
 
   if (!role) {
     await new Promise((r) => setTimeout(r, 700)); // slow down guessing
-    return NextResponse.json({ message: 'Incorrect password.' }, { status: 401 });
+    // Until CHECKIN_PASSWORD is added in Vercel, only the dashboard password opens the desk — say so,
+    // instead of leaving a volunteer to think they mistyped. (/api/health already shows whether it is set.)
+    const message =
+      body.area === 'checkin' && !deskPasswordSet()
+        ? 'Incorrect password. No separate desk password is set up on this site yet — sign in with the dashboard password, or add CHECKIN_PASSWORD in Vercel and redeploy.'
+        : 'Incorrect password.';
+    return NextResponse.json({ message }, { status: 401 });
   }
 
   // The desk password only opens the check-in desk, so send a volunteer who used it on /dashboard there.
