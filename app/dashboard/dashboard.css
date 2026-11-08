@@ -1338,6 +1338,25 @@
   }
 }
 
+/* Phones and touch tablets: tinted panels instead of live backdrop blurs (same look, much less
+   GPU work while the sky animates behind them). */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  :root {
+    --card-bg: rgba(9, 10, 44, 0.9);
+  }
+
+  .dash-head,
+  .toolbar,
+  .tile,
+  .card {
+    backdrop-filter: none;
+  }
+
+  .dash-head {
+    background: linear-gradient(180deg, rgba(5, 1, 34, 0.96), rgba(9, 10, 44, 0.9));
+  }
+}
+
 /* ---------------------------------------------------------------- print */
 
 @media print {

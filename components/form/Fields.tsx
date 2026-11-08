@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { memo, useState, type ReactNode } from 'react';
 import { Alert, Check } from '../Icons';
 
 export const fieldId = (key: string) => `f-${key.replace(/\./g, '-')}`;
@@ -58,7 +58,7 @@ interface TextFieldProps extends LabelProps {
   bare?: boolean;
 }
 
-export function TextField(p: TextFieldProps) {
+function TextFieldImpl(p: TextFieldProps) {
   const id = fieldId(p.name);
   const max = p.maxLength ?? 150;
   const describedBy = [p.hint && `${id}-hint`, p.error && `${id}-err`].filter(Boolean).join(' ') || undefined;
@@ -141,7 +141,7 @@ interface CardChoiceProps extends LabelProps {
 }
 
 /** Single-choice cards (radio group). */
-export function CardChoice(p: CardChoiceProps) {
+function CardChoiceImpl(p: CardChoiceProps) {
   const id = fieldId(p.name);
   const [pulse, setPulse] = useState('');
   return (
@@ -206,7 +206,7 @@ interface ChipChoiceProps extends LabelProps {
 }
 
 /** Multiple-choice chips (check all that apply). */
-export function ChipChoice(p: ChipChoiceProps) {
+function ChipChoiceImpl(p: ChipChoiceProps) {
   const id = fieldId(p.name);
   const [pulse, setPulse] = useState('');
   const toggle = (v: string) => {
@@ -251,3 +251,10 @@ export function ChipChoice(p: ChipChoiceProps) {
     </div>
   );
 }
+
+// Memoized so typing in one field re-renders only that field, not the whole form — the form
+// passes stable callbacks and option lists, so unchanged fields skip rendering entirely.
+// (Noticeable on slower phones, where re-rendering every field per keystroke caused jank.)
+export const TextField = memo(TextFieldImpl);
+export const CardChoice = memo(CardChoiceImpl);
+export const ChipChoice = memo(ChipChoiceImpl);

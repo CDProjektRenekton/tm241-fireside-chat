@@ -138,26 +138,27 @@ a {
   inset: 0;
 }
 
+/* The clouds are small canvases (components/GradientCanvas.tsx + nebula.ts) stretched to these
+   sizes: the GPU scales a fixed texture instead of rasterizing huge gradients at full device
+   resolution — the biggest saving on high-density phone screens. The drift is a GPU transform. */
 .neb {
   position: absolute;
   display: block;
-  border-radius: 50%;
   will-change: transform;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.neb[data-ready] {
+  opacity: 1;
 }
 
 /* the cyan "fabric" swoosh that crosses the pubmat */
-/* Performance: the soft edges come from layered elliptical gradients rather than `filter: blur()`
-   or masks, so each cloud is rasterized once and the drift is a cheap GPU transform. */
 .neb-cyan {
   width: 150vmax;
   height: 40vmax;
   left: -46vmax;
   top: 48%;
-  border-radius: 0;
-  background:
-    radial-gradient(40% 50% at 33% 50%, rgba(138, 209, 226, 0.8), rgba(138, 209, 226, 0.36) 45%, transparent 100%),
-    radial-gradient(34% 46% at 52% 50%, rgba(94, 182, 211, 0.58), rgba(94, 182, 211, 0.22) 50%, transparent 100%),
-    radial-gradient(32% 42% at 71% 50%, rgba(42, 91, 138, 0.46), rgba(42, 91, 138, 0.16) 50%, transparent 100%);
   transform: rotate(27deg);
   animation: neb-cyan 34s ease-in-out infinite alternate;
 }
@@ -168,10 +169,6 @@ a {
   height: 26vmax;
   left: -30vmax;
   top: 28%;
-  border-radius: 0;
-  background:
-    radial-gradient(38% 50% at 40% 50%, rgba(30, 66, 113, 0.78), rgba(30, 66, 113, 0.32) 50%, transparent 100%),
-    radial-gradient(28% 44% at 62% 50%, rgba(59, 125, 167, 0.46), rgba(59, 125, 167, 0.16) 50%, transparent 100%);
   transform: rotate(23deg);
   animation: neb-fold 41s ease-in-out infinite alternate;
 }
@@ -181,13 +178,6 @@ a {
   height: 66vmax;
   left: -26vmax;
   top: -28vmax;
-  background: radial-gradient(
-    closest-side,
-    rgba(94, 182, 211, 0.5),
-    rgba(72, 150, 190, 0.32) 35%,
-    rgba(42, 91, 138, 0.14) 62%,
-    transparent 100%
-  );
   animation: neb-glow 28s ease-in-out infinite alternate;
 }
 
@@ -196,13 +186,6 @@ a {
   height: 50vmax;
   right: -22vmax;
   bottom: -24vmax;
-  background: radial-gradient(
-    closest-side,
-    rgba(232, 71, 90, 0.72),
-    rgba(232, 71, 90, 0.42) 38%,
-    rgba(232, 71, 90, 0.14) 70%,
-    transparent 100%
-  );
   animation: neb-coral 30s ease-in-out infinite alternate;
 }
 
@@ -211,7 +194,6 @@ a {
   height: 26vmax;
   left: -16vmax;
   top: 15%;
-  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.5), rgba(232, 71, 90, 0.2) 55%, transparent 100%);
   animation: neb-coral-2 24s ease-in-out infinite alternate;
 }
 
@@ -333,6 +315,17 @@ a {
 
 .stars-far span {
   opacity: 0.6;
+}
+
+/* Only some groups twinkle (2 far, 3 near); the rest are painted once into their parent layer.
+   Each twinkling group is a full-screen GPU layer, so this halves the stars' graphics memory.
+   The static groups are the first children, so they never sit above an animating layer (which
+   would force them into extra layers of their own). */
+.stars-far .twinkle:nth-child(-n + 4),
+.stars-near .twinkle:nth-child(-n + 3) {
+  animation: none;
+  will-change: auto;
+  opacity: 0.7;
 }
 
 @keyframes twinkle {
@@ -476,10 +469,20 @@ a {
   }
 }
 
+/* a small canvas stretched over the screen (same gradient as before: transparent to 55%, then
+   darkening to the edges) — a tiny texture instead of a full-screen, full-density layer */
 .vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(3, 0, 32, 0.7) 100%);
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.vignette[data-ready] {
+  opacity: 1;
 }
 
 /* =====================================================================
@@ -900,20 +903,14 @@ a {
   pointer-events: none;
 }
 
-.card-sweep i {
+/* a 256 px conic-gradient texture (drawn once in CardSweep.tsx), stretched and spun by the GPU */
+.card-sweep canvas {
   position: absolute;
   left: 50%;
   top: 50%;
+  display: block;
   width: 145cqmax;
   height: 145cqmax;
-  background: conic-gradient(
-    transparent 0deg,
-    rgba(138, 209, 226, 0.9) 40deg,
-    transparent 90deg,
-    transparent 200deg,
-    rgba(242, 112, 124, 0.7) 240deg,
-    transparent 290deg
-  );
   transform: translate(-50%, -50%) rotate(0deg);
   will-change: transform;
   animation: sweep 9s linear infinite;
@@ -2497,42 +2494,36 @@ a {
   inset: 0;
 }
 
-/* soft edges from gradients + static masks instead of filter: blur() (see .neb) */
-.splash-nebula span {
+/* small canvases stretched to size, like the page nebula (see .neb) */
+.splash-neb {
   position: absolute;
-  border-radius: 50%;
+  display: block;
   opacity: 0;
   will-change: opacity, scale;
   animation: neb-in 2.4s var(--ease-out) forwards;
 }
 
-.splash-nebula span:nth-child(1) {
+.splash-neb-1 {
   width: 76vmax;
   height: 32vmax;
   left: -24vmax;
   top: 54%;
-  border-radius: 0;
   transform: rotate(26deg);
-  background:
-    radial-gradient(40% 50% at 40% 50%, rgba(138, 209, 226, 0.62), rgba(138, 209, 226, 0.26) 48%, transparent 100%),
-    radial-gradient(30% 44% at 70% 50%, rgba(42, 91, 138, 0.44), rgba(42, 91, 138, 0.14) 50%, transparent 100%);
 }
 
-.splash-nebula span:nth-child(2) {
+.splash-neb-2 {
   width: 52vmax;
   height: 46vmax;
   right: -18vmax;
   bottom: -20vmax;
-  background: radial-gradient(closest-side, rgba(232, 71, 90, 0.6), rgba(232, 71, 90, 0.26) 50%, transparent 100%);
   animation-delay: 0.4s;
 }
 
-.splash-nebula span:nth-child(3) {
+.splash-neb-3 {
   width: 56vmax;
   height: 56vmax;
   left: -20vmax;
   top: -22vmax;
-  background: radial-gradient(closest-side, rgba(94, 182, 211, 0.45), rgba(94, 182, 211, 0.18) 50%, transparent 100%);
   animation-delay: 0.2s;
 }
 
@@ -3200,6 +3191,34 @@ a {
   .btn {
     padding: 13px 18px;
     font-size: 15px;
+  }
+}
+
+/* =====================================================================
+   Phones, tablets and other touch devices — same look, far less GPU work
+   ===================================================================== */
+
+@media (hover: none), (pointer: coarse) {
+  /* Touch screens have no mouse parallax, so the star layers don't need to be separate GPU
+     layers: most stars paint straight into the backdrop and two groups keep twinkling. */
+  .par {
+    will-change: auto;
+  }
+
+  .stars-far .twinkle,
+  .stars-near .twinkle:nth-child(-n + 4) {
+    animation: none;
+    will-change: auto;
+    opacity: 0.7;
+  }
+}
+
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  /* A live backdrop blur of a phone-sized card is recomputed every frame behind the animated
+     sky. A deeper tint looks the same on a small screen for a fraction of the work. */
+  .form-card {
+    backdrop-filter: none;
+    background: linear-gradient(180deg, rgba(12, 14, 54, 0.9), rgba(8, 9, 40, 0.93));
   }
 }
 

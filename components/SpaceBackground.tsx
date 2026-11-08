@@ -1,3 +1,5 @@
+import GradientCanvas from './GradientCanvas';
+import { NEBULA, VIGNETTE } from './nebula';
 import Parallax from './Parallax';
 
 /**
@@ -92,11 +94,9 @@ export default function SpaceBackground({ calm = false }: { calm?: boolean }) {
     <div className={`space${calm ? ' is-calm' : ''}`} aria-hidden="true">
       <Parallax />
       <div className="nebula">
-        <span className="neb neb-cyan" />
-        <span className="neb neb-fold" />
-        <span className="neb neb-glow" />
-        <span className="neb neb-coral" />
-        <span className="neb neb-coral-2" />
+        {NEBULA.map((n) => (
+          <GradientCanvas key={n.className} className={n.className} blobs={n.blobs} aspect={n.aspect} width={n.width} />
+        ))}
       </div>
       <div className="grain" />
       <div className="par par-far">
@@ -119,7 +119,7 @@ export default function SpaceBackground({ calm = false }: { calm?: boolean }) {
       </div>
       <div className="halftone halftone-tr" />
       <div className="halftone halftone-bl" />
-      <div className="vignette" />
+      <GradientCanvas className={VIGNETTE.className} blobs={VIGNETTE.blobs} aspect={VIGNETTE.aspect} width={VIGNETTE.width} />
     </div>
   );
 }

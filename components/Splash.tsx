@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EVENT } from '@/lib/config';
+import GradientCanvas from './GradientCanvas';
+import { SPLASH_NEBULA } from './nebula';
 
 const SHOW_MS = 5200;
 const SHOW_MS_REPEAT = 2300; // shorter when the visitor has already seen it in this tab
@@ -75,8 +77,9 @@ export default function Splash() {
 
     let w = 0;
     let h = 0;
-    // 1.5× is visually indistinguishable for thin streaks and draws far fewer pixels on retina screens.
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    // Motion streaks don't need full density: 1.5× on larger screens, 1× on phones (the canvas is
+    // re-uploaded to the GPU every frame, so its pixel count matters most on mobile).
+    const dpr = Math.min(window.devicePixelRatio || 1, window.innerWidth < 760 ? 1 : 1.5);
     const resize = () => {
       const nw = window.innerWidth;
       const nh = window.innerHeight;
@@ -194,9 +197,9 @@ export default function Splash() {
       aria-label="Loading the TM241 Fireside Chat registration form"
     >
       <div className="splash-nebula">
-        <span />
-        <span />
-        <span />
+        {SPLASH_NEBULA.map((n) => (
+          <GradientCanvas key={n.className} className={n.className} blobs={n.blobs} aspect={n.aspect} width={n.width} />
+        ))}
       </div>
       <canvas className="splash-warp" ref={canvasRef} />
       <div className="splash-halftones">

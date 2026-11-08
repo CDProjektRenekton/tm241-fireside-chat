@@ -58,6 +58,11 @@ const AFFILIATION_ICONS: Record<(typeof AFFILIATIONS)[number], React.ReactNode> 
   Other: <Plus />,
 };
 
+// Created once (not per render) so the memoized fields see unchanged props.
+const ICON_USER = <User />;
+const ICON_MAIL = <Mail />;
+const ICON_BUILDING = <Building />;
+
 const AFFILIATION_OPTIONS = AFFILIATIONS.map((a) => ({ value: a, label: a, icon: AFFILIATION_ICONS[a] }));
 const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
 const CONSENT_OPTIONS = [
@@ -123,10 +128,13 @@ export default function RegistrationForm() {
     if (attempted[step]) setErrors(STEP_VALIDATORS[step - 1](data));
   }, [data, step, attempted]);
 
-  const set =
-    <K extends keyof RegistrationInput>(key: K) =>
-    (v: RegistrationInput[K]) =>
-      setData((d) => ({ ...d, [key]: v }));
+  // One stable setter per field (cached), so memoized fields don't re-render on every keystroke.
+  const setters = useRef<Partial<Record<keyof RegistrationInput, (v: never) => void>>>({});
+  const set = <K extends keyof RegistrationInput>(key: K) => {
+    const cache = setters.current;
+    if (!cache[key]) cache[key] = ((v: RegistrationInput[K]) => setData((d) => ({ ...d, [key]: v }))) as (v: never) => void;
+    return cache[key] as unknown as (v: RegistrationInput[K]) => void;
+  };
 
   const scrollToCard = () => {
     const el = cardRef.current;
@@ -338,7 +346,7 @@ export default function RegistrationForm() {
               number={1}
               label="Name"
               required
-              icon={<User />}
+              icon={ICON_USER}
               autoComplete="name"
               placeholder="Full name, e.g. Juan Dela Cruz"
               maxLength={LIMITS.name}
@@ -354,7 +362,7 @@ export default function RegistrationForm() {
               type="email"
               inputMode="email"
               autoComplete="email"
-              icon={<Mail />}
+              icon={ICON_MAIL}
               placeholder="you@example.com"
               value={data.email}
               onChange={set('email')}
@@ -366,7 +374,7 @@ export default function RegistrationForm() {
               label="University / Organization"
               required
               autoComplete="organization"
-              icon={<Building />}
+              icon={ICON_BUILDING}
               placeholder="e.g. University of the Philippines Diliman"
               value={data.organization}
               onChange={set('organization')}
@@ -381,7 +389,7 @@ export default function RegistrationForm() {
               className="cards-affiliation"
               options={AFFILIATION_OPTIONS}
               value={data.affiliation}
-              onChange={(v) => set('affiliation')(v as RegistrationInput['affiliation'])}
+              onChange={set('affiliation') as (v: string) => void}
               error={errors.affiliation}
             >
               {data.affiliation === 'Other' && (
@@ -503,7 +511,7 @@ export default function RegistrationForm() {
                 className="cards-consent"
                 options={CONSENT_OPTIONS}
                 value={data.consent}
-                onChange={(v) => set('consent')(v as RegistrationInput['consent'])}
+                onChange={set('consent') as (v: string) => void}
                 error={errors.consent}
               />
               {data.consent === 'No' && (

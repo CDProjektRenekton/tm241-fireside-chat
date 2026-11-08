@@ -112,7 +112,9 @@ looks them up by name; if you must, update `lib/fields.ts`). Extra columns you a
 | Questions, labels, privacy text | `components/form/RegistrationForm.tsx` |
 | Boarding pass, calendar invite, liftoff animation | `components/form/MissionPass.tsx` |
 | Splash screen | `components/Splash.tsx` + the *Splash* section of `app/globals.css` |
-| Background (nebula, stars, halftone) | `components/SpaceBackground.tsx` + `app/globals.css` |
+| Background (stars, halftone, layout of the clouds) | `components/SpaceBackground.tsx` + `app/globals.css` |
+| Nebula cloud colours and shapes (drawn into small canvases) | `components/nebula.ts` |
+| Phone / touch-device performance rules | *Phones, tablets and other touch devices* section of `app/globals.css` |
 | Validation rules and messages | `lib/validation.ts` |
 | Logos | `public/up-seal.png`, `public/tmc-logo.png` |
 
