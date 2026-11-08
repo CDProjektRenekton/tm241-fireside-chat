@@ -2190,14 +2190,29 @@ a {
   word-break: break-all;
 }
 
-.pass-barcode {
-  width: 100%;
-  height: 46px;
-  fill: rgba(255, 255, 255, 0.88);
+/* the scannable QR code: plain dark-on-white so every camera reads it */
+.pass-qr {
+  display: block;
+  width: 128px;
+  height: 128px;
+  margin: 2px 0;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgba(173, 227, 242, 0.4),
+    0 12px 28px -14px rgba(94, 182, 211, 0.75);
 }
 
-.pass.is-preview .pass-barcode {
-  fill: rgba(255, 255, 255, 0.25);
+.pass-qr.is-pending {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border: 1.5px dashed rgba(173, 227, 242, 0.32);
+  box-shadow: none;
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.035) 0 6px, transparent 6px 12px);
+  font-size: 11.5px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ink-3);
 }
 
 .pass-admit {
@@ -2208,34 +2223,37 @@ a {
   color: var(--coral-400);
 }
 
+/* sits on the main part, never over the QR code */
 .pass-stamp {
+  --rot: -9deg;
   position: absolute;
-  bottom: 19%;
-  right: 50%;
-  translate: 50% 0;
+  z-index: 1;
+  /* straddles the bottom edge of the header band, clear of the title */
+  top: 47px;
+  right: 14px;
   white-space: nowrap;
   padding: 5px 9px;
   border: 2px solid var(--mint);
   border-radius: 8px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mint);
   background: rgba(5, 1, 34, 0.6);
-  transform: rotate(-14deg);
+  transform: rotate(var(--rot));
   animation: stamp 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.5s both;
 }
 
 @keyframes stamp {
   from {
     opacity: 0;
-    transform: rotate(-14deg) scale(2.4);
+    transform: rotate(var(--rot)) scale(2.4);
   }
   to {
     opacity: 1;
-    transform: rotate(-14deg) scale(1);
+    transform: rotate(var(--rot)) scale(1);
   }
 }
 
@@ -3126,14 +3144,16 @@ a {
     border-left: 0;
     border-top: 2px dashed rgba(173, 227, 242, 0.35);
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'label admit'
-      'ref ref'
-      'code code';
+      'label code'
+      'ref code'
+      'admit code';
+    align-content: center;
+    align-items: center;
     justify-items: start;
     text-align: left;
-    gap: 6px 10px;
+    gap: 4px 16px;
   }
 
   .pass-stub .pass-label {
@@ -3142,23 +3162,27 @@ a {
 
   .pass-ref {
     grid-area: ref;
-    font-size: 17px;
+    font-size: 16px;
+    /* if it must wrap, break after a dash, never mid-code */
+    word-break: normal;
   }
 
-  .pass-barcode {
+  .pass-qr {
     grid-area: code;
-    height: 38px;
+    width: 108px;
+    height: 108px;
   }
 
   .pass-admit {
     grid-area: admit;
-    justify-self: end;
   }
 
   .pass-stamp {
-    bottom: 12px;
+    --rot: -14deg;
+    top: auto;
+    bottom: 14px;
     right: 14px;
-    translate: none;
+    font-size: 10.5px;
   }
 
   .pass-meta {

@@ -3,16 +3,15 @@ import { NextResponse } from 'next/server';
 import { AirtableError, ConfigError, createRegistration } from '@/lib/airtable';
 import { EVENT } from '@/lib/config';
 import { F } from '@/lib/fields';
+import { REF_ALPHABET, REF_CODE_LENGTH } from '@/lib/ticket';
 import { normalizeInput, validateAll } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const REF_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // no 0/O, 1/I
-
 function makeRef() {
   let s = '';
-  for (let i = 0; i < 6; i++) s += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
+  for (let i = 0; i < REF_CODE_LENGTH; i++) s += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
   return `${EVENT.refPrefix}-${s}`;
 }
 

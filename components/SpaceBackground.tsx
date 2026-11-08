@@ -89,9 +89,10 @@ export function SparkleShape() {
   );
 }
 
-export default function SpaceBackground({ calm = false }: { calm?: boolean }) {
+/** `calm` dims the sky behind data; `still` also stops its motion (for the camera-heavy check-in desk). */
+export default function SpaceBackground({ calm = false, still = false }: { calm?: boolean; still?: boolean }) {
   return (
-    <div className={`space${calm ? ' is-calm' : ''}`} aria-hidden="true">
+    <div className={`space${calm ? ' is-calm' : ''}${still ? ' is-paused' : ''}`} aria-hidden="true">
       <Parallax />
       <div className="nebula">
         {NEBULA.map((n) => (

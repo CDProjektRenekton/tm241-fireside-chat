@@ -12,7 +12,11 @@ const nextConfig: NextConfig = {
   // ExcelJS is loaded at runtime from node_modules instead of being bundled.
   serverExternalPackages: ['exceljs'],
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      { source: '/(.*)', headers: securityHeaders },
+      // The check-in desk scans tickets with the camera; every other page keeps it blocked.
+      { source: '/checkin', headers: [{ key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' }] },
+    ];
   },
 };
 

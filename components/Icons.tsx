@@ -254,3 +254,12 @@ export const Sparkle = (p: P) => (
     <path d="M12 1.5c.6 5.6 3.3 8.3 10.5 10.5-7.2 2.2-9.9 4.9-10.5 10.5-.6-5.6-3.3-8.3-10.5-10.5C8.7 9.8 11.4 7.1 12 1.5Z" />
   </svg>
 );
+/** QR-code scanner: corner brackets around a small code. */
+export const ScanQr = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16" />
+    <rect x="7" y="7" width="4" height="4" rx="0.6" />
+    <rect x="13" y="13" width="4" height="4" rx="0.6" />
+    <path d="M13 7h4v2M7 15v2h2" />
+  </svg>
+);

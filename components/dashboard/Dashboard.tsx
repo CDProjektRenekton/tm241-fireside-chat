@@ -28,6 +28,7 @@ import {
   Message,
   Printer,
   Refresh,
+  ScanQr,
   Search,
   Sheet,
 } from '../Icons';
@@ -165,6 +166,10 @@ export default function Dashboard() {
           </div>
           <div className="dash-actions no-print">
             {payload && <span className="dash-updated">Updated {formatDateTime(payload.fetchedAt)}</span>}
+            <a className="head-btn" href="/checkin">
+              <ScanQr width={18} height={18} />
+              Check-in desk
+            </a>
             <button type="button" className="head-btn" onClick={() => void copyFormLink()}>
               {linkCopied ? <Check width={18} height={18} /> : <Copy width={18} height={18} />}
               {linkCopied ? 'Link copied' : 'Copy form link'}
@@ -266,6 +271,14 @@ export default function Dashboard() {
                 <option value="no">No question</option>
               </select>
             </label>
+            <label className="filter">
+              <span>Attendance</span>
+              <select value={filters.attended} onChange={(e) => setFilter('attended', e.target.value as Filters['attended'])}>
+                <option value="">Everyone</option>
+                <option value="yes">Checked in</option>
+                <option value="no">Not checked in</option>
+              </select>
+            </label>
             {hasFilters && (
               <button type="button" className="btn-mini filter-reset" onClick={() => setFilters(EMPTY_FILTERS)}>
                 Clear filters
@@ -320,6 +333,11 @@ export default function Dashboard() {
                 label="Registrations"
                 value={stats.total}
                 note={stats.today ? `+${fmt(stats.today)} today` : 'None yet today'}
+              />
+              <StatTile
+                label="Checked in"
+                value={stats.attended}
+                note={stats.attended ? `${pct(stats.attended, stats.total)}% of registrants` : 'Scanned at /checkin'}
               />
               <StatTile
                 label="Universities & organizations"

@@ -8,12 +8,43 @@ organized by the TM241 class of the UP Diliman Technology Management Center.
 - **`/`** — galaxy-themed splash screen (hyperspace star field, orbiting UP and TMC seals, the title
   rising letter by letter, then a warp jump into the page), followed by a three-stage form that follows
   the TM241 Event Registration Google Form. Registrants get a printable **boarding pass** with a
-  reference number and an **Add to calendar (.ics)** button. Responses are saved to Airtable.
+  reference number, a **scannable QR code** and an **Add to calendar (.ics)** button. Responses are saved
+  to Airtable.
 - **`/dashboard`** — password-protected dashboard: key figures, affiliation and topic charts,
   registrations per day, universities/organizations, a **question wall** for the moderator, a searchable
-  table, and exports to **Excel (.xlsx)**, **CSV**, an **attendance sheet** and **speaker questions**.
+  table, attendance, and exports to **Excel (.xlsx)**, **CSV**, an **attendance sheet** and **speaker questions**.
+- **`/checkin`** — the **check-in desk** for event day: scans the QR code on a boarding pass with a phone or
+  laptop camera, confirms the ticket is really in the Airtable database, and ticks **Attended**.
 
 Reference numbers look like `TM241-FC-7KQ2MX`.
+
+## Check-in desk (`/checkin`)
+
+Every boarding pass carries a QR code that holds only its reference number. At the door, open
+**`/checkin`** on any phone, tablet or laptop with a camera and sign in with either:
+
+- the **desk password** (`CHECKIN_PASSWORD`), for volunteers. It opens only the scanner: it can verify a
+  ticket, mark attendance and find a registrant by name, but cannot open the dashboard, emails, answers or
+  exports;
+- the **dashboard password**, for the organizing team.
+
+Point the camera at the QR code. Each scan is checked against Airtable and shows one of:
+
+| Result | Meaning |
+| --- | --- |
+| **Checked in** (green) | Genuine ticket. **Attended** is ticked and **Checked In At** is stamped in Airtable |
+| **Already checked in** (amber) | Genuine, but scanned before (shows when). Check the person’s ID if it looks like a shared ticket |
+| **Not registered** (red) | No registration has that reference number: a fake or mistyped ticket |
+| **Not a Fireside Chat ticket** (red) | The QR code isn’t one of ours |
+
+Also on the desk: **Verify only** mode (checks tickets without marking attendance — useful before the
+event), **Undo check-in** for mistakes, typing the reference number when a code won’t scan, a **Lost
+ticket?** search by name, email or organization, a live “checked in / registered” counter, sound and
+vibration feedback, and a flashlight button on phones that have one. Several devices can scan at once.
+
+The camera runs in the browser and needs HTTPS (Vercel provides it). Chrome on Android uses the phone’s
+built-in QR reader; iPhones, Windows and Firefox use the bundled jsQR decoder. Attendance also appears on
+the dashboard (a **Checked in** figure, an **Attendance** filter and badges in the table) and in every export.
 
 ## Design
 
@@ -50,6 +81,7 @@ reads through `/api/responses`, both running on Vercel’s servers.
 | `AIRTABLE_BASE_ID` | no | Defaults to the Fireside Chat base `app62Sl4pVXVuGNsI` |
 | `AIRTABLE_TABLE_ID` | no | Defaults to the “Fireside Chat Registrations” table `tblq0AzB7jqkQvnJu` |
 | `DASHBOARD_PASSWORD` | yes | Password for `/dashboard` — share only with the organizing team |
+| `CHECKIN_PASSWORD` | optional | Desk password for volunteers: opens only the scanner at `/checkin`. Changing it signs out every desk that used the old one |
 | `SESSION_SECRET` | optional | Long random string used to sign dashboard sessions |
 
 In Vercel, make sure each variable is enabled for **Production**. Copy `.env.example` to `.env.local`
@@ -96,12 +128,13 @@ Registrations go to the **“Fireside Chat Registrations”** table. Columns:
 
 `Reference No.` (primary), `Submitted At`, `Name`, `Email`, `University/Organization`,
 `Current Affiliation`, `Current Affiliation (Other)`, `Topics of Interest` (multiple select),
-`Topics of Interest (Other)`, `Question for the Speaker`, `Hopes to Learn`, `Data Privacy Consent`.
+`Topics of Interest (Other)`, `Question for the Speaker`, `Hopes to Learn`, `Data Privacy Consent`,
+`Attended` (checkbox, ticked by the check-in desk), `Checked In At`.
 
 If the table or any column goes missing, the dashboard shows a **“Create fields now”** button, and the
 form also repairs the schema on its first submission. Don’t rename these columns in Airtable (the app
-looks them up by name; if you must, update `lib/fields.ts`). Extra columns you add — e.g. an
-“Attended” checkbox for the registration desk — are ignored by the app and safe to use.
+looks them up by name; if you must, update `lib/fields.ts`). Extra columns you add are ignored by the app
+and safe to use. You can also tick or untick **Attended** by hand in Airtable; the desk and dashboard follow it.
 
 ## Customising
 
@@ -111,6 +144,8 @@ looks them up by name; if you must, update `lib/fields.ts`). Extra columns you a
 | Affiliation and topic choices | `lib/config.ts` → `AFFILIATIONS`, `TOPICS` |
 | Questions, labels, privacy text | `components/form/RegistrationForm.tsx` |
 | Boarding pass, calendar invite, liftoff animation | `components/form/MissionPass.tsx` |
+| QR code on the pass | `components/TicketQR.tsx`; reference-number rules in `lib/ticket.ts` |
+| Check-in desk (scanner, results, search) | `components/checkin/` + `app/checkin/checkin.css`; API in `app/api/checkin/route.ts` |
 | Splash screen | `components/Splash.tsx` + the *Splash* section of `app/globals.css` |
 | Background (stars, halftone, layout of the clouds) | `components/SpaceBackground.tsx` + `app/globals.css` |
 | Nebula cloud colours and shapes (drawn into small canvases) | `components/nebula.ts` |
@@ -121,7 +156,10 @@ looks them up by name; if you must, update `lib/fields.ts`). Extra columns you a
 ## Security notes
 
 - The Airtable token and dashboard password live only in Vercel environment variables.
-- Dashboard sessions use a signed, HTTP-only cookie that expires after 12 hours.
+- Dashboard and desk sessions use a signed, HTTP-only cookie that expires after 12 hours. The desk password
+  cannot open the dashboard, responses or exports, and the check-in API returns only the name, organization,
+  affiliation, reference number and check-in time (plus a masked email in name searches).
+- The camera is allowed only on `/checkin` (via `Permissions-Policy`); every other page blocks it.
 - The form has server-side validation, a size limit, and a hidden honeypot field against bots.
 - Form drafts are kept in the browser tab only (`sessionStorage`) and are cleared when the tab closes or
   the form is submitted.

@@ -6,7 +6,23 @@ import { EVENT } from '@/lib/config';
 import CardSweep from '../CardSweep';
 import { Alert, ArrowRight, Lock } from '../Icons';
 
-export default function LoginForm({ configured }: { configured: boolean }) {
+const COPY = {
+  dashboard: {
+    kicker: 'Mission control',
+    lead: (series: string) =>
+      `Registration dashboard for the ${series}. For the TM241 organizing team only — sign in to view and export registrations.`,
+    label: 'Dashboard password',
+  },
+  checkin: {
+    kicker: 'Check-in desk',
+    lead: (series: string) =>
+      `Ticket scanner for the ${series}. For the organizing team and door volunteers — sign in with the desk password or the dashboard password.`,
+    label: 'Desk password',
+  },
+};
+
+export default function LoginForm({ configured, area = 'dashboard' }: { configured: boolean; area?: 'dashboard' | 'checkin' }) {
+  const copy = COPY[area];
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -20,11 +36,12 @@ export default function LoginForm({ configured }: { configured: boolean }) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, area }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.message || 'Sign-in failed.');
-      window.location.reload();
+      if (json.next) window.location.assign(json.next);
+      else window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed.');
       setBusy(false);
@@ -38,18 +55,15 @@ export default function LoginForm({ configured }: { configured: boolean }) {
         <Image src="/up-seal.png" alt="University of the Philippines" width={480} height={480} priority />
         <Image src="/tmc-logo.png" alt="UP Technology Management Center" width={400} height={400} priority />
       </div>
-      <p className="form-kicker">Mission control</p>
+      <p className="form-kicker">{copy.kicker}</p>
       <h1 className="login-title">{EVENT.title}</h1>
-      <p className="login-lead">
-        Registration dashboard for the {EVENT.series}. For the TM241 organizing team only — sign in to view and export
-        registrations.
-      </p>
+      <p className="login-lead">{copy.lead(EVENT.series)}</p>
 
       {configured ? (
         <form onSubmit={submit} noValidate>
           <div className={`field${error ? ' has-error' : ''}`}>
             <label htmlFor="dash-password" className="label">
-              Dashboard password
+              {copy.label}
             </label>
             <div className="control with-icon">
               <span className="control-icon">

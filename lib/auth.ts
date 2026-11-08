@@ -26,26 +26,59 @@ function safeEqual(a: string, b: string) {
   return timingSafeEqual(ha, hb);
 }
 
-export function checkPassword(input: string) {
-  const expected = process.env.DASHBOARD_PASSWORD;
-  return Boolean(expected) && safeEqual(input, expected as string);
+/**
+ * Two kinds of sign-in:
+ * - "admin" (DASHBOARD_PASSWORD): the dashboard, exports and the check-in desk.
+ * - "desk" (CHECKIN_PASSWORD, optional): only the check-in desk at /checkin, for volunteers at the door.
+ *   It can look up a ticket and mark attendance, but never sees emails, answers or exports.
+ */
+export type Role = 'admin' | 'desk';
+
+export function deskPasswordSet() {
+  return Boolean(process.env.CHECKIN_PASSWORD);
 }
 
-export function createSessionToken() {
+const passwordFor = (role: Role) => (role === 'admin' ? process.env.DASHBOARD_PASSWORD : process.env.CHECKIN_PASSWORD);
+
+/** Which sign-in a password unlocks, or null if it matches neither. */
+export function roleForPassword(input: string): Role | null {
+  for (const role of ['admin', 'desk'] as const) {
+    const expected = passwordFor(role);
+    if (expected && safeEqual(input, expected)) return role;
+  }
+  return null;
+}
+
+// The signature also covers the role's current password, so changing a password signs out
+// everyone who used the old one.
+const signSession = (exp: string, role: Role) => sign(`${exp}.${role}.${passwordFor(role) ?? ''}`);
+
+export function createSessionToken(role: Role) {
   const exp = String(Math.floor(Date.now() / 1000) + SESSION_MAX_AGE);
-  return `${exp}.${sign(exp)}`;
+  return `${exp}.${role}.${signSession(exp, role)}`;
 }
 
-export function verifySessionToken(token: string | undefined) {
-  if (!token || !dashboardConfigured()) return false;
-  const [exp, sig] = token.split('.');
-  if (!exp || !sig || !safeEqual(sig, sign(exp))) return false;
-  return Number(exp) * 1000 > Date.now();
+export function verifySessionToken(token: string | undefined): Role | null {
+  if (!token || !dashboardConfigured()) return null;
+  const [exp, role, sig, extra] = token.split('.');
+  if (extra !== undefined || (role !== 'admin' && role !== 'desk') || !exp || !sig) return null;
+  if (!passwordFor(role) || !safeEqual(sig, signSession(exp, role))) return null;
+  return Number(exp) * 1000 > Date.now() ? role : null;
 }
 
-export async function isAuthenticated() {
+export async function sessionRole() {
   const store = await cookies();
   return verifySessionToken(store.get(SESSION_COOKIE)?.value);
+}
+
+/** Dashboard, responses, exports and schema setup. */
+export async function isAuthenticated() {
+  return (await sessionRole()) === 'admin';
+}
+
+/** The check-in desk: either password works. */
+export async function canCheckIn() {
+  return (await sessionRole()) !== null;
 }
 
 export const sessionCookieOptions = {

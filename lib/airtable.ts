@@ -253,7 +253,57 @@ function toRegistration(r: AirtableRecord): Registration {
     question: str(f[F.question]),
     hopes: str(f[F.hopes]),
     consent: str(f[F.consent]),
+    attended: f[F.attended] === true,
+    checkedInAt: str(f[F.checkedInAt]),
   };
+}
+
+// ---------------------------------------------------------------- check-in desk
+
+const RECORD_ID = /^rec[A-Za-z0-9]{14}$/;
+// Reference numbers only ever contain A–Z, 0–9 and dashes; anything else never reaches the formula.
+const SAFE_REF = /^[A-Z0-9-]{1,32}$/;
+
+/** The registration with this exact reference number, or null if there is none. */
+export async function findByRef(ref: string): Promise<Registration | null> {
+  if (!SAFE_REF.test(ref)) return null;
+  const { baseId, table } = config();
+  const q = new URLSearchParams({ filterByFormula: `UPPER(TRIM({${F.ref}}))='${ref}'`, maxRecords: '1' });
+  const page = await request<{ records: AirtableRecord[] }>(`/${baseId}/${encodeURIComponent(table)}?${q}`);
+  return page.records[0] ? toRegistration(page.records[0]) : null;
+}
+
+/** One registration by its Airtable record ID (used when the desk finds someone by name). */
+export async function findById(id: string): Promise<Registration | null> {
+  if (!RECORD_ID.test(id)) return null;
+  const { baseId, table } = config();
+  try {
+    return toRegistration(await request<AirtableRecord>(`/${baseId}/${encodeURIComponent(table)}/${id}`));
+  } catch (e) {
+    if (e instanceof AirtableError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+/**
+ * Ticks (or clears) "Attended" and stamps "Checked In At". If those columns don't exist yet,
+ * creates them once and retries, the same way the form repairs the schema.
+ */
+export async function setAttendance(id: string, attended: boolean): Promise<Registration> {
+  if (!RECORD_ID.test(id)) throw new AirtableError(404, 'NOT_FOUND', 'Unknown record.');
+  const { baseId, table } = config();
+  const patch = (tableKey: string) =>
+    request<AirtableRecord>(`/${baseId}/${encodeURIComponent(tableKey)}/${id}`, {
+      method: 'PATCH',
+      body: { fields: { [F.attended]: attended, [F.checkedInAt]: attended ? new Date().toISOString() : null } },
+    });
+  try {
+    return toRegistration(await patch(table));
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    const report = await ensureSchema();
+    return toRegistration(await patch(report.tableId));
+  }
 }
 
 /** Every registration in the table, newest first. Blank rows (e.g. Airtable's starter rows) are skipped. */

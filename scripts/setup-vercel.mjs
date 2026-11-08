@@ -6,7 +6,7 @@
 // 1. Signs in to Vercel (opens the browser) if needed.
 // 2. Links this folder to your Vercel project (first run only).
 // 3. Copies AIRTABLE_TOKEN from .env.local into Vercel (always, so a new token replaces the old one),
-//    and DASHBOARD_PASSWORD / SESSION_SECRET only if Vercel does not have them yet.
+//    and DASHBOARD_PASSWORD / CHECKIN_PASSWORD / SESSION_SECRET only if Vercel does not have them yet.
 // 4. Redeploys production so the values take effect.
 //
 // Values are passed to the Vercel CLI through stdin, so they are never printed.
@@ -81,6 +81,7 @@ if (!existing) fail('Could not read the current Vercel variables, so nothing was
 const vars = [
   { name: 'AIRTABLE_TOKEN', value: local.AIRTABLE_TOKEN, overwrite: true },
   { name: 'DASHBOARD_PASSWORD', value: local.DASHBOARD_PASSWORD, overwrite: false },
+  { name: 'CHECKIN_PASSWORD', value: local.CHECKIN_PASSWORD, overwrite: false },
   { name: 'SESSION_SECRET', value: local.SESSION_SECRET, overwrite: false },
 ];
 for (const v of vars) {

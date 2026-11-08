@@ -14,6 +14,8 @@ export const F = {
   question: 'Question for the Speaker',
   hopes: 'Hopes to Learn',
   consent: 'Data Privacy Consent',
+  attended: 'Attended',
+  checkedInAt: 'Checked In At',
 } as const;
 
 export interface FieldSpec {
@@ -82,5 +84,17 @@ export const FIELD_SPECS: FieldSpec[] = [
     description:
       'I voluntarily consent to the collection and processing of my information for event registration, attendance monitoring, and event coordination.',
     options: choices(['Yes', 'No'], ['greenLight2', 'redLight2']),
+  },
+  {
+    name: F.attended,
+    type: 'checkbox',
+    description: 'Ticked by the check-in desk (/checkin) when the registrant arrives at the event.',
+    options: { icon: 'check', color: 'greenBright' },
+  },
+  {
+    name: F.checkedInAt,
+    type: 'dateTime',
+    description: 'When the ticket was scanned at the check-in desk (Philippine time).',
+    options: { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' },
   },
 ];

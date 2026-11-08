@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EVENT, venueFull } from '@/lib/config';
 import type { RegistrationInput } from '@/lib/types';
+import { ticketPayload } from '@/lib/ticket';
 import { Check, Copy, Sparkle } from '../Icons';
+import TicketQR from '../TicketQR';
 
 export function affiliationText(d: Pick<RegistrationInput, 'affiliation' | 'affiliationOther'>) {
   return d.affiliation === 'Other' ? d.affiliationOther || 'Other' : d.affiliation;
@@ -32,27 +34,6 @@ export function CopyRef({ value }: { value: string }) {
   );
 }
 
-/** Decorative barcode derived from the reference number, so every pass looks unique. */
-function Barcode({ value }: { value: string }) {
-  let h = 2166136261;
-  const bars: { x: number; w: number }[] = [];
-  let x = 0;
-  for (let i = 0; i < 46; i++) {
-    h ^= value.charCodeAt(i % Math.max(1, value.length)) + i;
-    h = Math.imul(h, 16777619) >>> 0;
-    const w = 1 + (h % 3);
-    if (i % 2 === 0) bars.push({ x, w });
-    x += w + (h % 2);
-  }
-  return (
-    <svg className="pass-barcode" viewBox={`0 0 ${x} 40`} preserveAspectRatio="none" aria-hidden="true">
-      {bars.map((b, i) => (
-        <rect key={i} x={b.x} y="0" width={b.w} height="40" />
-      ))}
-    </svg>
-  );
-}
-
 interface PassProps {
   data: RegistrationInput;
   refNo?: string;
@@ -74,6 +55,7 @@ export function MissionPass({ data, refNo }: PassProps) {
             Boarding pass
           </span>
         </header>
+        {refNo && <span className="pass-stamp">Cleared for liftoff</span>}
         <div className="pass-body">
           <p className="pass-kicker">{EVENT.series}</p>
           <h3 className="pass-title">{EVENT.title}</h3>
@@ -105,9 +87,12 @@ export function MissionPass({ data, refNo }: PassProps) {
         <span className="pass-perf" aria-hidden="true" />
         <span className="pass-label">Reference No.</span>
         <strong className="pass-ref">{refNo ?? 'Pending'}</strong>
-        <Barcode value={refNo ?? data.email ?? 'TM241'} />
+        {refNo ? (
+          <TicketQR className="pass-qr" value={ticketPayload(refNo)} />
+        ) : (
+          <span className="pass-qr is-pending">QR code appears after you register</span>
+        )}
         <span className="pass-admit">Admit one</span>
-        {refNo && <span className="pass-stamp">Cleared for liftoff</span>}
       </div>
     </article>
   );

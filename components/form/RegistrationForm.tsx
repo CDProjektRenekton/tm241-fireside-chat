@@ -241,7 +241,7 @@ export default function RegistrationForm() {
         <h2 className="success-title">You&rsquo;re cleared for liftoff!</h2>
         <p className="success-lead">
           Thank you, {first}! Your registration for <b>{EVENT.title}</b> has been received. Here is your boarding pass —
-          keep the reference number for the registration desk.
+          save or print it, and show its QR code at the registration desk on the day.
         </p>
 
         <MissionPass data={result.data} refNo={result.ref} />

@@ -17,6 +17,8 @@ const REG_HEADERS = [
   'Question for the Speaker',
   'Hopes to Learn',
   'Data Privacy Consent',
+  'Attended',
+  'Checked In At',
   'Possible Duplicate',
 ];
 
@@ -33,11 +35,22 @@ function registrationRows(rows: Registration[]): Row[] {
     'Question for the Speaker': r.question,
     'Hopes to Learn': r.hopes,
     'Data Privacy Consent': r.consent,
+    Attended: r.attended ? 'Yes' : '',
+    'Checked In At': r.attended ? formatDateTime(r.checkedInAt) : '',
     'Possible Duplicate': dups.has(duplicateKey(r)) ? 'Yes' : '',
   }));
 }
 
-const ATTENDANCE_HEADERS = ['No.', 'Name', 'University/Organization', 'Current Affiliation', 'Email', 'Reference No.', 'Signature'];
+const ATTENDANCE_HEADERS = [
+  'No.',
+  'Name',
+  'University/Organization',
+  'Current Affiliation',
+  'Email',
+  'Reference No.',
+  'Checked In',
+  'Signature',
+];
 
 /** Alphabetical sign-in sheet for the registration desk. */
 function attendanceRows(rows: Registration[]): Row[] {
@@ -50,6 +63,7 @@ function attendanceRows(rows: Registration[]): Row[] {
       'Current Affiliation': affiliationLabel(r),
       Email: r.email,
       'Reference No.': r.ref,
+      'Checked In': r.attended ? formatDateTime(r.checkedInAt) || 'Yes' : '',
       Signature: '',
     }));
 }
@@ -200,6 +214,7 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
   const share = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '0%');
   section('Key figures', ['Metric', 'Value'], [
     ['Registrations', stats.total],
+    ['Checked in at the event', stats.attended],
     ['Universities / organizations represented', stats.organizations],
     ['Students (undergraduate + graduate)', stats.students],
     ['Questions for the speaker', stats.questions],
@@ -232,6 +247,7 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     'Topics of Interest': 48,
     'Question for the Speaker': 52,
     'Hopes to Learn': 52,
+    'Checked In At': 22,
   });
   const att = addTableSheet(wb, 'Attendance Sheet', attendanceRows(rows), ATTENDANCE_HEADERS, {
     'No.': 6,
@@ -240,6 +256,7 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     'Current Affiliation': 24,
     Email: 30,
     'Reference No.': 18,
+    'Checked In': 22,
     Signature: 26,
   });
   att.eachRow((row, i) => {

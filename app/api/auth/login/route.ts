@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
-  checkPassword,
   createSessionToken,
   dashboardConfigured,
+  roleForPassword,
   sameOrigin,
   SESSION_COOKIE,
   sessionCookieOptions,
@@ -20,15 +20,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { password?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { password?: unknown; area?: unknown };
   const password = typeof body.password === 'string' ? body.password : '';
+  const role = roleForPassword(password);
 
-  if (!checkPassword(password)) {
+  if (!role) {
     await new Promise((r) => setTimeout(r, 700)); // slow down guessing
     return NextResponse.json({ message: 'Incorrect password.' }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, createSessionToken(), sessionCookieOptions);
+  // The desk password only opens the check-in desk, so send a volunteer who used it on /dashboard there.
+  const next = role === 'desk' && body.area !== 'checkin' ? '/checkin' : undefined;
+  const res = NextResponse.json({ ok: true, role, next });
+  res.cookies.set(SESSION_COOKIE, createSessionToken(role), sessionCookieOptions);
   return res;
 }

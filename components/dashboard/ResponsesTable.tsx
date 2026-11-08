@@ -4,12 +4,23 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { TOPIC_SHORT, type Topic } from '@/lib/config';
 import { affiliationLabel, duplicateKey, formatDateTime } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
-import { Alert, ChevronDown, Message, X } from '../Icons';
+import { Alert, Check, ChevronDown, Message, X } from '../Icons';
 
 type SortKey = 'submittedAt' | 'name' | 'organization' | 'affiliation';
 const PAGE_SIZE = 20;
 
 const topicName = (t: string, other: string) => (t === 'Other' && other ? `Other: ${other}` : (TOPIC_SHORT[t as Topic] ?? t));
+
+const timeOnly = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' });
+
+function AttendedBadge({ at }: { at: string }) {
+  return (
+    <span className="status status-good" title={at ? `Checked in ${formatDateTime(at)}` : 'Checked in'}>
+      <Check width={13} height={13} />
+      Checked in{at ? ` ${timeOnly.format(new Date(at))}` : ''}
+    </span>
+  );
+}
 
 function DupBadge() {
   return (
@@ -95,6 +106,7 @@ export default function ResponsesTable({
                 <td data-label="Registrant">
                   <span className="cell-strong">{r.name || '—'}</span>
                   <span className="cell-sub">{r.email}</span>
+                  {r.attended && <AttendedBadge at={r.checkedInAt} />}
                   {dupKeys.has(duplicateKey(r)) && <DupBadge />}
                 </td>
                 <td data-label="Organization">{r.organization || <span className="muted">—</span>}</td>
@@ -162,6 +174,11 @@ export default function ResponsesTable({
               </button>
             </header>
             <div className="detail-badges">
+              {selected.attended ? (
+                <AttendedBadge at={selected.checkedInAt} />
+              ) : (
+                <span className="status status-neutral">Not checked in yet</span>
+              )}
               {dupKeys.has(duplicateKey(selected)) && <DupBadge />}
               <span className="status status-neutral">Data privacy consent: {selected.consent || '—'}</span>
             </div>

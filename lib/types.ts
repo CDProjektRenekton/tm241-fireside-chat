@@ -32,7 +32,37 @@ export interface Registration {
   question: string;
   hopes: string;
   consent: string;
+  /** Ticked by the check-in desk when the ticket is scanned at the event. */
+  attended: boolean;
+  checkedInAt: string;
 }
+
+/** What the check-in desk sees about a registrant — no email, questions or other answers. */
+export interface DeskRecord {
+  id: string;
+  ref: string;
+  name: string;
+  organization: string;
+  affiliation: string;
+  attended: boolean;
+  checkedInAt: string;
+  /** Masked, only in name-search results, to tell two people with the same name apart. */
+  email?: string;
+}
+
+export type CheckInResult =
+  /** Ticket is genuine and was just marked "Attended". */
+  | 'checked-in'
+  /** Ticket is genuine but was already scanned earlier. */
+  | 'already'
+  /** Verify-only mode: ticket is genuine and not yet checked in. */
+  | 'valid'
+  /** A check-in was undone. */
+  | 'undone'
+  /** No registration has this reference number. */
+  | 'not-found'
+  /** The code isn't a Fireside Chat reference number at all. */
+  | 'invalid';
 
 export interface SchemaStatus {
   ok: boolean;

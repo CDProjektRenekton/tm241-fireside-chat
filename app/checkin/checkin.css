@@ -1,0 +1,800 @@
+/* =====================================================================
+   Check-in desk — scan boarding passes at the door (builds on dashboard.css)
+   ===================================================================== */
+
+.desk {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding-bottom: 36px;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.desk-head {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px max(24px, calc((100vw - 1180px) / 2));
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(5, 1, 34, 0.94), rgba(9, 10, 44, 0.82));
+}
+
+.desk-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--grad-accent);
+  opacity: 0.6;
+}
+
+.desk-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.desk-brand .dash-logos img {
+  width: 44px;
+  height: 44px;
+}
+
+.desk-titles {
+  min-width: 0;
+}
+
+.desk-titles h1 {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(22px, 2.6vw, 32px);
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desk-count {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px 6px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  line-height: 1.05;
+}
+
+.desk-count-ring {
+  --p: 0%;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--navy-900) 72%, transparent 74%),
+    conic-gradient(var(--mint) var(--p), rgba(173, 227, 242, 0.16) 0);
+}
+
+.desk-count strong {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+
+.desk-count-of {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--ink-3);
+}
+
+.desk-count small {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.desk-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.desk-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: start;
+  gap: 18px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 24px 0;
+}
+
+.desk-banner {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.desk-left,
+.desk-side {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.desk-scan {
+  display: grid;
+  /* minmax(0, …) so the camera's own picture size can never widen the card */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.typed.card {
+  padding: 16px 20px 18px;
+}
+
+.desk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(3, 1, 30, 0.5);
+}
+
+.seg button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.seg button[aria-pressed='true'] {
+  background: var(--grad-accent);
+  color: var(--navy-950);
+}
+
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.sound-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--cyan-400);
+}
+
+/* ---------------------------------------------------------------- camera */
+
+.scanner {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 70% at 50% 45%, rgba(94, 182, 211, 0.12), transparent 70%),
+    #03011c;
+  border: 1px solid var(--line-strong);
+  isolation: isolate;
+}
+
+.scanner video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.scanner.is-live video {
+  opacity: 1;
+}
+
+.scanner video.is-mirrored {
+  transform: scaleX(-1);
+}
+
+/* the target square matches the part of the picture that is decoded */
+.scan-frame {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  height: 80%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  pointer-events: none;
+  border-radius: 14px;
+  box-shadow: 0 0 0 100vmax rgba(3, 1, 28, 0.34);
+}
+
+.scanner:not(.is-live) .scan-frame {
+  box-shadow: none;
+  opacity: 0.4;
+}
+
+.scan-frame i {
+  position: absolute;
+  width: 18%;
+  height: 18%;
+  border: 3px solid var(--cyan-200);
+  filter: drop-shadow(0 0 6px rgba(94, 182, 211, 0.8));
+}
+
+.scan-frame i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 14px;
+}
+
+.scan-frame i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-top-right-radius: 14px;
+}
+
+.scan-frame i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom-left-radius: 14px;
+}
+
+.scan-frame i:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 14px;
+}
+
+.scan-line {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan-200) 20%, #fff 50%, var(--coral-400) 80%, transparent);
+  box-shadow: 0 0 14px 2px rgba(94, 182, 211, 0.7);
+  animation: scan-sweep 2.4s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* the sweep moves in the frame's own height (container units) */
+.scan-frame {
+  container-type: size;
+}
+
+@keyframes scan-sweep {
+  from {
+    transform: translateY(4cqh);
+  }
+  to {
+    transform: translateY(96cqh);
+  }
+}
+
+/* a coloured pulse around the picture for every result */
+.scan-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: scan-flash 0.9s ease-out forwards;
+}
+
+.scan-flash.flash-ok {
+  box-shadow: inset 0 0 0 4px var(--mint), inset 0 0 60px rgba(143, 240, 207, 0.45);
+}
+
+.scan-flash.flash-warn {
+  box-shadow: inset 0 0 0 4px var(--warn), inset 0 0 60px rgba(255, 211, 143, 0.4);
+}
+
+.scan-flash.flash-bad {
+  box-shadow: inset 0 0 0 4px var(--coral-400), inset 0 0 60px rgba(242, 112, 124, 0.5);
+}
+
+@keyframes scan-flash {
+  0% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.scanner-idle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.scanner-idle p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 340px;
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.scanner-tools {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scanner-hint {
+  margin-right: auto;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(3, 1, 28, 0.66);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.scan-tool {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(3, 1, 28, 0.72);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.scan-tool[aria-pressed='true'] {
+  background: var(--warn);
+  color: var(--navy-950);
+}
+
+/* ---------------------------------------------------------------- typed reference */
+
+.typed label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.typed-row {
+  display: flex;
+  gap: 8px;
+}
+
+.typed-control {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 42px;
+  padding-left: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--input);
+}
+
+.typed-control:focus-within {
+  border-color: var(--cyan-400);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.typed-prefix {
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+.typed-control input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 12px 0 1px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  outline: none;
+}
+
+.typed .btn-mini {
+  height: 42px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- result */
+
+.desk-result {
+  position: relative;
+}
+
+.desk-checking {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.result {
+  --tone: var(--cyan-300);
+  --tone-soft: rgba(94, 182, 211, 0.1);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  background:
+    radial-gradient(120% 120% at 0% 0%, var(--tone-soft), transparent 60%),
+    rgba(9, 10, 44, 0.9);
+  box-shadow: 0 20px 50px -30px color-mix(in srgb, var(--tone) 70%, transparent);
+  animation: result-in 0.45s var(--ease-out);
+}
+
+.result-idle {
+  --tone: var(--line-strong);
+  --tone-soft: transparent;
+  animation: none;
+}
+
+.result-ok {
+  --tone: var(--mint);
+  --tone-soft: rgba(143, 240, 207, 0.16);
+}
+
+.result-warn {
+  --tone: var(--warn);
+  --tone-soft: rgba(255, 211, 143, 0.14);
+}
+
+.result-bad {
+  --tone: var(--coral-400);
+  --tone-soft: rgba(242, 112, 124, 0.18);
+}
+
+.result-neutral {
+  --tone: var(--periwinkle);
+  --tone-soft: rgba(167, 180, 255, 0.12);
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.result-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+  border: 1.5px solid var(--tone);
+  color: var(--tone);
+}
+
+.result-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.result-idle .result-icon {
+  color: var(--ink-3);
+  border-color: var(--line-strong);
+}
+
+.result-body {
+  min-width: 0;
+}
+
+.result-title {
+  margin: 2px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tone);
+}
+
+.result-idle .result-title {
+  color: var(--ink-2);
+}
+
+.result-name {
+  margin: 6px 0 0;
+  font-family: var(--display);
+  font-size: clamp(28px, 3.4vw, 38px);
+  line-height: 1.02;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.result-org {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.result-org em {
+  font-style: normal;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: rgba(94, 182, 211, 0.14);
+  border: 1px solid rgba(94, 182, 211, 0.28);
+  font-size: 12px;
+  color: var(--cyan-100);
+}
+
+.result-ref {
+  margin: 8px 0 0;
+  color: var(--cyan-100);
+}
+
+.result-note {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.result-actions:empty {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- search + history */
+
+.desk-search .search-box input {
+  min-width: 0;
+}
+
+.matches,
+.history {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.matches li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.matches li > div {
+  min-width: 0;
+}
+
+.desk-empty {
+  margin: 0;
+  font-size: 14px;
+}
+
+.history {
+  max-height: 340px;
+  overflow-y: auto;
+  margin-top: 0;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.history li:first-child {
+  border-top: 0;
+}
+
+.h-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.h-ok .h-dot {
+  background: var(--mint);
+  box-shadow: 0 0 8px rgba(143, 240, 207, 0.6);
+}
+
+.h-warn .h-dot {
+  background: var(--warn);
+}
+
+.h-bad .h-dot {
+  background: var(--coral-400);
+}
+
+.h-main {
+  min-width: 0;
+}
+
+.h-main strong {
+  display: block;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.h-time {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ---------------------------------------------------------------- phones */
+
+@media (max-width: 900px) {
+  .desk-main {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 14px 0;
+    gap: 14px;
+  }
+
+  .desk-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .desk-brand {
+    grid-column: 1 / -1;
+  }
+
+  .desk-count {
+    justify-self: start;
+  }
+
+  /* one column, with the result card straight under the camera */
+  .desk-left,
+  .desk-side {
+    display: contents;
+  }
+
+  .desk-scan {
+    order: 1;
+  }
+
+  .desk-result {
+    order: 2;
+  }
+
+  .typed {
+    order: 3;
+  }
+
+  .desk-search {
+    order: 4;
+  }
+
+  .desk-history {
+    order: 5;
+  }
+}
+
+@media (max-width: 560px) {
+  .desk-brand .dash-logos img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .desk-actions .head-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .desk-actions .head-btn svg {
+    display: none;
+  }
+
+  .desk-series {
+    display: none;
+  }
+
+  .desk-head {
+    padding: 10px 14px;
+  }
+
+  .scanner {
+    aspect-ratio: 5 / 4;
+  }
+
+  .desk-scan.card,
+  .typed.card {
+    padding: 14px;
+  }
+
+  .seg button {
+    padding: 8px 14px;
+  }
+
+  .result {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .result-icon {
+    width: 44px;
+    height: 44px;
+  }
+}

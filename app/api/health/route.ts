@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectionStatus } from '@/lib/airtable';
-import { dashboardConfigured } from '@/lib/auth';
+import { dashboardConfigured, deskPasswordSet } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,10 @@ export async function GET() {
       dashboard: {
         passwordSet: dashboardPassword,
         ...(dashboardPassword ? {} : { problem: 'DASHBOARD_PASSWORD is missing — the dashboard cannot be opened.' }),
+      },
+      checkin: {
+        // Optional: without it, the check-in desk (/checkin) opens with the dashboard password only.
+        deskPasswordSet: deskPasswordSet(),
       },
     },
     { status: ok ? 200 : 503, headers: { 'Cache-Control': 'no-store' } },

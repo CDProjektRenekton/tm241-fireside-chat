@@ -10,10 +10,12 @@ export interface Filters {
   affiliation: string;
   topic: string;
   question: '' | 'yes' | 'no';
+  /** Checked in at the event (the Attended box in Airtable). */
+  attended: '' | 'yes' | 'no';
   range: RangeKey;
 }
 
-export const EMPTY_FILTERS: Filters = { q: '', affiliation: '', topic: '', question: '', range: 'all' };
+export const EMPTY_FILTERS: Filters = { q: '', affiliation: '', topic: '', question: '', attended: '', range: 'all' };
 
 export const RANGE_LABELS: Record<RangeKey, string> = {
   all: 'All time',
@@ -47,11 +49,13 @@ export function topicsLabel(r: Pick<Registration, 'topics' | 'topicsOther'>) {
 export function filtersFromParams(p: URLSearchParams): Filters {
   const range = p.get('range') as RangeKey | null;
   const question = p.get('question');
+  const attended = p.get('attended');
   return {
     q: p.get('q') ?? '',
     affiliation: p.get('affiliation') ?? '',
     topic: p.get('topic') ?? '',
     question: question === 'yes' || question === 'no' ? question : '',
+    attended: attended === 'yes' || attended === 'no' ? attended : '',
     range: range && range in RANGE_LABELS ? range : 'all',
   };
 }
@@ -68,6 +72,7 @@ export function describeFilters(f: Filters) {
   if (f.affiliation) parts.push(f.affiliation);
   if (f.topic) parts.push(`Interested in “${f.topic}”`);
   if (f.question) parts.push(f.question === 'yes' ? 'With a question for the speaker' : 'Without a question');
+  if (f.attended) parts.push(f.attended === 'yes' ? 'Checked in' : 'Not checked in');
   if (f.q) parts.push(`Search: "${f.q}"`);
   return parts.length ? parts.join(' · ') : 'All registrations';
 }
@@ -84,6 +89,8 @@ export function applyFilters(rows: Registration[], f: Filters, now = new Date())
     if (f.topic && !r.topics.includes(f.topic)) return false;
     if (f.question === 'yes' && !r.question) return false;
     if (f.question === 'no' && r.question) return false;
+    if (f.attended === 'yes' && !r.attended) return false;
+    if (f.attended === 'no' && r.attended) return false;
     if (since && dayKey(r.submittedAt) < since) return false;
     if (q) {
       const hay = [r.ref, r.name, r.email, r.organization, affiliationLabel(r), r.question, r.hopes, r.topicsOther]
@@ -117,6 +124,8 @@ export interface Stats {
   questions: number;
   hopes: number;
   today: number;
+  /** Checked in at the event. */
+  attended: number;
   byAffiliation: { label: string; count: number }[];
   byTopic: { topic: string; count: number }[];
   /** Registrants who picked at least one topic. */
@@ -169,6 +178,7 @@ export function computeStats(rows: Registration[], now = new Date()): Stats {
     questions: rows.filter((r) => r.question).length,
     hopes: rows.filter((r) => r.hopes).length,
     today: rows.filter((r) => dayKey(r.submittedAt) === todayKey).length,
+    attended: rows.filter((r) => r.attended).length,
     byAffiliation: byAffiliation.sort((a, b) => b.count - a.count || AFFILIATIONS.indexOf(a.label as never) - AFFILIATIONS.indexOf(b.label as never)),
     byTopic: TOPICS.map((t) => ({ topic: t as string, count: rows.filter((r) => r.topics.includes(t)).length })).sort(
       (a, b) => b.count - a.count,
