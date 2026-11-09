@@ -10,13 +10,13 @@ const COPY = {
   dashboard: {
     kicker: 'Mission control',
     lead: (series: string) =>
-      `Registration dashboard for the ${series}. For the TM241 organizing team only — sign in to view and export registrations.`,
+      `Registration dashboard for the ${series}.`,
     label: 'Dashboard password',
   },
   checkin: {
     kicker: 'Check-in desk',
     lead: (series: string) =>
-      `Ticket scanner for the ${series}. For the organizing team and door volunteers — sign in with the desk password or the dashboard password.`,
+      `Ticket scanner for the ${series}.`,
     label: 'Desk password',
   },
 };
