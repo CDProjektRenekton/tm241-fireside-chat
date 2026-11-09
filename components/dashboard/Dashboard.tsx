@@ -353,7 +353,7 @@ export default function Dashboard() {
               <StatTile
                 label="Top topic"
                 value={topTopic ? `${pct(topTopic.count, stats.total)}%` : '—'}
-                note={topTopic ? TOPIC_SHORT[topTopic.topic as Topic] : 'No topics picked yet'}
+                note={topTopic ? topTopic.topic : 'No topics picked yet'}
               />
             </section>
 

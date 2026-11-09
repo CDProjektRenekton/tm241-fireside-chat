@@ -504,7 +504,6 @@ export default function CheckInDesk({ isAdmin }: { isAdmin: boolean }) {
           <section className="card desk-history">
             <header className="card-head">
               <h2>Recent scans</h2>
-              <p>On this device. The full list is in Airtable and the dashboard.</p>
             </header>
             {history.length === 0 ? (
               <p className="muted desk-empty">Nothing scanned yet.</p>
