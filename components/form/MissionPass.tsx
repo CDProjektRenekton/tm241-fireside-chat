@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { EVENT, venueFull } from '@/lib/config';
+import { EVENT } from '@/lib/config';
+import { buildInvite, inviteFileName } from '@/lib/ics';
 import type { RegistrationInput } from '@/lib/types';
 import { ticketPayload } from '@/lib/ticket';
 import { Check, Copy, Sparkle } from '../Icons';
@@ -100,44 +101,12 @@ export function MissionPass({ data, refNo }: PassProps) {
 
 // ---------------------------------------------------------------- calendar invite
 
-const icsText = (s: string) => s.replace(/\\/g, '\\\\').replace(/[,;]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\n');
-const icsTime = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-
 export function downloadInvite(refNo: string, data: RegistrationInput) {
-  const description = [
-    `${EVENT.series}: ${EVENT.title}`,
-    EVENT.subtitle,
-    '',
-    `Reference No.: ${refNo}`,
-    `Registered: ${data.name} (${data.organization})`,
-    `Organizer: ${EVENT.organizer}`,
-  ].join('\n');
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//UP Diliman TMC//TM241 Fireside Chat//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${refNo}@tm241-fireside-chat`,
-    `DTSTAMP:${icsTime(new Date().toISOString())}`,
-    `DTSTART:${icsTime(EVENT.startsAt)}`,
-    `DTEND:${icsTime(EVENT.endsAt)}`,
-    `SUMMARY:${icsText(`${EVENT.series}: ${EVENT.title}`)}`,
-    `LOCATION:${icsText(venueFull())}`,
-    `DESCRIPTION:${icsText(description)}`,
-    'BEGIN:VALARM',
-    'TRIGGER:-P1D',
-    'ACTION:DISPLAY',
-    `DESCRIPTION:${icsText(`${EVENT.series} is tomorrow`)}`,
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ];
-  const url = URL.createObjectURL(new Blob([`${lines.join('\r\n')}\r\n`], { type: 'text/calendar;charset=utf-8' }));
+  const ics = buildInvite({ ref: refNo, name: data.name, organization: data.organization });
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `TM241-Fireside-Chat-${refNo}.ics`;
+  a.download = inviteFileName(refNo);
   document.body.appendChild(a);
   a.click();
   a.remove();

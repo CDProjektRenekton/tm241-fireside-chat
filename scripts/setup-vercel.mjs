@@ -83,6 +83,13 @@ const vars = [
   { name: 'DASHBOARD_PASSWORD', value: local.DASHBOARD_PASSWORD, overwrite: false },
   { name: 'CHECKIN_PASSWORD', value: local.CHECKIN_PASSWORD, overwrite: false },
   { name: 'SESSION_SECRET', value: local.SESSION_SECRET, overwrite: false },
+  // Confirmation email (optional): .env.local is the source of truth, so changes there are sent again.
+  { name: 'SMTP_USER', value: local.SMTP_USER, overwrite: true },
+  { name: 'SMTP_PASS', value: local.SMTP_PASS, overwrite: true },
+  { name: 'SMTP_HOST', value: local.SMTP_HOST, overwrite: true },
+  { name: 'SMTP_PORT', value: local.SMTP_PORT, overwrite: true },
+  { name: 'EMAIL_FROM', value: local.EMAIL_FROM, overwrite: true },
+  { name: 'EMAIL_REPLY_TO', value: local.EMAIL_REPLY_TO, overwrite: true },
 ];
 for (const v of vars) {
   if (!v.value) continue;

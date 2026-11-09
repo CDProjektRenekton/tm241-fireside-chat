@@ -87,7 +87,7 @@ export default function RegistrationForm() {
   const [attempted, setAttempted] = useState<Record<Step, boolean>>({ 1: false, 2: false, 3: false });
   const [status, setStatus] = useState<Status>('idle');
   const [serverError, setServerError] = useState('');
-  const [result, setResult] = useState<{ ref: string; data: RegistrationInput } | null>(null);
+  const [result, setResult] = useState<{ ref: string; data: RegistrationInput; emailed: boolean } | null>(null);
   const cardRef = useRef<HTMLElement>(null);
   const loaded = useRef(false);
 
@@ -180,7 +180,13 @@ export default function RegistrationForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; ref?: string; message?: string; errors?: FieldErrors };
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        ref?: string;
+        emailed?: boolean;
+        message?: string;
+        errors?: FieldErrors;
+      };
       if (!res.ok || !json.ok || !json.ref) {
         if (json.errors && Object.keys(json.errors).length) {
           const firstStep = stepOf(Object.keys(json.errors)[0]);
@@ -191,7 +197,7 @@ export default function RegistrationForm() {
         }
         throw new Error(json.message || 'Submission failed. Please try again.');
       }
-      setResult({ ref: json.ref, data });
+      setResult({ ref: json.ref, data, emailed: Boolean(json.emailed) });
       setStatus('done');
       try {
         sessionStorage.removeItem(DRAFT_KEY);
@@ -267,6 +273,14 @@ export default function RegistrationForm() {
             <span>Where</span>
             {EVENT.venue}, UP Diliman
           </li>
+          {result.emailed && (
+            <li>
+              <span>Email</span>
+              <div>
+                A copy is on its way to <b>{result.data.email}</b>. Not there in a few minutes? Check Promotions or Spam.
+              </div>
+            </li>
+          )}
         </ul>
 
         <button type="button" className="btn btn-text no-print" onClick={reset}>

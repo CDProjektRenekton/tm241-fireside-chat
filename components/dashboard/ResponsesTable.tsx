@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { TOPIC_SHORT, type Topic } from '@/lib/config';
 import { affiliationLabel, duplicateKey, formatDateTime } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
-import { Alert, Check, ChevronDown, Message, X } from '../Icons';
+import { Alert, Check, ChevronDown, Mail, Message, X } from '../Icons';
 
 type SortKey = 'submittedAt' | 'name' | 'organization' | 'affiliation';
 const PAGE_SIZE = 20;
@@ -19,6 +19,43 @@ function AttendedBadge({ at }: { at: string }) {
       <Check width={13} height={13} />
       Checked in{at ? ` ${timeOnly.format(new Date(at))}` : ''}
     </span>
+  );
+}
+
+/** Resend or preview a registrant's boarding-pass email (e.g. when they say it never arrived). */
+function EmailActions({ reg }: { reg: Registration }) {
+  const [state, setState] = useState<{ status: 'idle' | 'sending' | 'sent' | 'error'; message?: string }>({ status: 'idle' });
+  async function resend() {
+    setState({ status: 'sending' });
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: reg.id }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { to?: string; message?: string };
+      if (!res.ok) throw new Error(json.message || 'The email could not be sent.');
+      setState({ status: 'sent', message: `Sent to ${json.to ?? reg.email}` });
+    } catch (e) {
+      setState({ status: 'error', message: e instanceof Error ? e.message : 'The email could not be sent.' });
+    }
+  }
+  return (
+    <div className="detail-actions">
+      <button type="button" className="btn-mini" onClick={resend} disabled={state.status === 'sending' || !reg.email}>
+        <Mail width={15} height={15} />
+        {state.status === 'sending' ? 'Sending…' : state.status === 'sent' ? 'Send again' : 'Resend confirmation email'}
+      </button>
+      <a className="btn-mini" href={`/api/email/preview?id=${encodeURIComponent(reg.id)}`} target="_blank" rel="noopener">
+        Preview email
+      </a>
+      {state.message && (
+        <span className={`status ${state.status === 'sent' ? 'status-good' : 'status-warning'}`} role="status">
+          {state.status === 'sent' ? <Check width={13} height={13} /> : <Alert width={13} height={13} />}
+          {state.message}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -214,6 +251,7 @@ export default function ResponsesTable({
                 <dd className="prose">{selected.hopes || '—'}</dd>
               </div>
             </dl>
+            <EmailActions key={selected.id} reg={selected} />
           </div>
         )}
       </dialog>

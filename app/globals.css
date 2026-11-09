@@ -2332,6 +2332,11 @@ a {
   grid-template-columns: 64px 1fr;
 }
 
+.success-facts li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .success-facts span {
   font-family: var(--mono);
   font-size: 10.5px;

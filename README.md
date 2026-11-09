@@ -13,6 +13,8 @@ organized by the TM241 class of the UP Diliman Technology Management Center.
 - **`/dashboard`** — password-protected dashboard: key figures, affiliation and topic charts,
   registrations per day, universities/organizations, a **question wall** for the moderator, a searchable
   table, attendance, and exports to **Excel (.xlsx)**, **CSV**, an **attendance sheet** and **speaker questions**.
+- **Confirmation email** — right after registering, each person gets their boarding pass by email: galaxy
+  header art, the pass with its **QR code**, Add to Google Calendar / directions buttons and an attached invite.
 - **`/checkin`** — the **check-in desk** for event day: scans the QR code on a boarding pass with a phone or
   laptop camera, confirms the ticket is really in the Airtable database, and ticks **Attended**.
 
@@ -45,6 +47,31 @@ vibration feedback, and a flashlight button on phones that have one. Several dev
 The camera runs in the browser and needs HTTPS (Vercel provides it). Chrome on Android uses the phone’s
 built-in QR reader; iPhones, Windows and Firefox use the bundled jsQR decoder. Attendance also appears on
 the dashboard (a **Checked in** figure, an **Attendance** filter and badges in the table) and in every export.
+
+## Confirmation email
+
+When someone registers, the site emails them their boarding pass: the galaxy header artwork, their name,
+reference number and **QR code** (the same one the check-in desk scans), **Add to Google Calendar** and
+**Get directions** buttons, the event details, their question for the speaker, and the calendar invite
+(`.ics`) as an attachment. It is sent right after the registration is saved, so the registrant never waits
+for it, and a mail problem never stops a registration.
+
+**Setting it up (Gmail):**
+
+1. Pick the Gmail account the emails should come from — ideally a class or event account, not a personal one.
+2. In that Google Account, turn on **2-Step Verification**, then create an **App password** at
+   <https://myaccount.google.com/apppasswords> (name it e.g. “TM241 Fireside Chat”). Google shows 16 letters.
+3. In Vercel → Settings → Environment Variables, add `SMTP_USER` (the Gmail address) and `SMTP_PASS` (the
+   app password) for Production, then redeploy. Or put both in `.env.local` and run `npm run setup:vercel`.
+4. Open `/api/health`: `"email": { "configured": true }`. Then, on the dashboard, open your own registration
+   → **Resend confirmation email** to see it arrive.
+
+Gmail sends up to about 500 emails a day, plenty for this event. Another provider works by setting
+`SMTP_HOST`, `SMTP_PORT` and, if its login isn't an email address, `EMAIL_FROM`.
+
+**On the dashboard**, every registration's details have **Resend confirmation email** (for “I never got it”,
+or people who registered before email was set up) and **Preview email**. `/api/email/preview` shows the email
+with sample details. If sending fails, the reason shows next to the button and in Vercel's function logs.
 
 ## Design
 
@@ -83,6 +110,11 @@ reads through `/api/responses`, both running on Vercel’s servers.
 | `DASHBOARD_PASSWORD` | yes | Password for `/dashboard` — share only with the organizing team |
 | `CHECKIN_PASSWORD` | optional | Desk password for volunteers: opens only the scanner at `/checkin`. Changing it signs out every desk that used the old one |
 | `SESSION_SECRET` | optional | Long random string used to sign dashboard sessions |
+| `SMTP_USER` | for email | Account that sends the confirmation emails (a Gmail address by default) |
+| `SMTP_PASS` | for email | Its password — for Gmail, an **App password**, not the normal one |
+| `SMTP_HOST`, `SMTP_PORT` | optional | Mail server for providers other than Gmail (default `smtp.gmail.com`, `465`) |
+| `EMAIL_FROM` | optional | Sender name and address, e.g. `TM241 Fireside Chat <tm241@…>`; needed only when `SMTP_USER` isn't an email address |
+| `EMAIL_REPLY_TO` | optional | Where replies go, if not to the sender |
 
 In Vercel, make sure each variable is enabled for **Production**. Copy `.env.example` to `.env.local`
 for local development. **Never commit `.env.local`** — it is already in `.gitignore`.
@@ -146,6 +178,8 @@ and safe to use. You can also tick or untick **Attended** by hand in Airtable; t
 | Boarding pass, calendar invite, liftoff animation | `components/form/MissionPass.tsx` |
 | QR code on the pass | `components/TicketQR.tsx`; reference-number rules in `lib/ticket.ts` |
 | Check-in desk (scanner, results, search) | `components/checkin/` + `app/checkin/checkin.css`; API in `app/api/checkin/route.ts` |
+| Confirmation email (layout, wording) | `lib/email/template.ts`; sending in `lib/email/send.ts` |
+| Email header art and icons | `public/email/` (`hero.jpg` is 1200 × 680, shown at 600 px wide) |
 | Splash screen | `components/Splash.tsx` + the *Splash* section of `app/globals.css` |
 | Background (stars, halftone, layout of the clouds) | `components/SpaceBackground.tsx` + `app/globals.css` |
 | Nebula cloud colours and shapes (drawn into small canvases) | `components/nebula.ts` |
@@ -159,6 +193,8 @@ and safe to use. You can also tick or untick **Attended** by hand in Airtable; t
 - Dashboard and desk sessions use a signed, HTTP-only cookie that expires after 12 hours. The desk password
   cannot open the dashboard, responses or exports, and the check-in API returns only the name, organization,
   affiliation, reference number and check-in time (plus a masked email in name searches).
+- The email account's password lives only in Vercel environment variables. Resending and previewing
+  emails need the dashboard password; registrants' text is escaped before it goes into the email.
 - The camera is allowed only on `/checkin` (via `Permissions-Policy`); every other page blocks it.
 - The form has server-side validation, a size limit, and a hidden honeypot field against bots.
 - Form drafts are kept in the browser tab only (`sessionStorage`) and are cleared when the tab closes or

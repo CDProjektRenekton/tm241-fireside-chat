@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectionStatus } from '@/lib/airtable';
 import { dashboardConfigured, deskPasswordSet } from '@/lib/auth';
+import { emailStatus } from '@/lib/email/send';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,8 @@ export async function GET() {
         // Optional: without it, the check-in desk (/checkin) opens with the dashboard password only.
         deskPasswordSet: deskPasswordSet(),
       },
+      // Optional: without it, registrants get their boarding pass on screen only, not by email.
+      email: emailStatus(),
     },
     { status: ok ? 200 : 503, headers: { 'Cache-Control': 'no-store' } },
   );

@@ -2,6 +2,7 @@ import { randomInt } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { AirtableError, ConfigError, createRegistration } from '@/lib/airtable';
 import { EVENT } from '@/lib/config';
+import { queueTicketEmail } from '@/lib/email/send';
 import { F } from '@/lib/fields';
 import { REF_ALPHABET, REF_CODE_LENGTH } from '@/lib/ticket';
 import { normalizeInput, validateAll } from '@/lib/validation';
@@ -60,7 +61,19 @@ export async function POST(req: Request) {
 
   try {
     await createRegistration(fields);
-    return NextResponse.json({ ok: true, ref });
+    // The boarding pass also goes out by email, after this response (never holds up or fails the registration).
+    const emailed = queueTicketEmail(
+      {
+        ref,
+        name: input.name,
+        email: input.email,
+        organization: input.organization,
+        affiliation: input.affiliation === 'Other' ? input.affiliationOther || 'Other' : input.affiliation,
+        question: input.question,
+      },
+      req,
+    );
+    return NextResponse.json({ ok: true, ref, emailed });
   } catch (e) {
     if (e instanceof ConfigError) {
       console.error('[submit] configuration error:', e.message);
