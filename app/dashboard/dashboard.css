@@ -86,7 +86,49 @@
 }
 
 .login-card .control input {
-  padding-right: 16px;
+  padding-right: 54px;
+}
+
+/* Edge adds its own eye to password fields; ours replaces it */
+.login-card .control input::-ms-reveal,
+.login-card .control input::-ms-clear {
+  display: none;
+}
+
+/* show / hide password */
+.reveal-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.reveal-btn:hover {
+  color: var(--cyan-200);
+  background: rgba(173, 227, 242, 0.08);
+}
+
+.reveal-btn:focus-visible {
+  outline: 2px solid var(--cyan-400);
+  outline-offset: -2px;
+  color: var(--cyan-200);
+}
+
+.reveal-btn[aria-pressed='true'] {
+  color: var(--cyan-300);
 }
 
 .login-btn {

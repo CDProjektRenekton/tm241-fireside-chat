@@ -225,6 +225,18 @@ export const Lock = (p: P) => (
     <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
   </svg>
 );
+export const Eye = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+export const EyeOff = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M10.6 5.6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a16.6 16.6 0 0 1-2.6 3.4M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.9 0 3.6-.6 5-1.5" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+  </svg>
+);
 export const ChevronDown = (p: P) => (
   <svg {...base(p)}>
     <path d="m6 9 6 6 6-6" />

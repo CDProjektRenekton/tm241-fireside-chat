@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { EVENT } from '@/lib/config';
 import CardSweep from '../CardSweep';
-import { Alert, ArrowRight, Lock } from '../Icons';
+import { Alert, ArrowRight, Eye, EyeOff, Lock } from '../Icons';
 
 const COPY = {
   dashboard: {
@@ -24,12 +24,15 @@ const COPY = {
 export default function LoginForm({ configured, area = 'dashboard' }: { configured: boolean; area?: 'dashboard' | 'checkin' }) {
   const copy = COPY[area];
   const [password, setPassword] = useState('');
+  const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!password || busy) return;
+    // Hide it again while signing in, so it isn't left on screen at a shared desk.
+    setShown(false);
     setBusy(true);
     setError('');
     try {
@@ -71,14 +74,30 @@ export default function LoginForm({ configured, area = 'dashboard' }: { configur
               </span>
               <input
                 id="dash-password"
-                type="password"
+                type={shown ? 'text' : 'password'}
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? 'dash-password-err' : undefined}
                 autoFocus
               />
+              <button
+                type="button"
+                className="reveal-btn"
+                onClick={() => setShown((v) => !v)}
+                // keep the cursor in the password field when the eye is clicked or tapped
+                onMouseDown={(e) => e.preventDefault()}
+                aria-label={shown ? 'Hide password' : 'Show password'}
+                aria-pressed={shown}
+                aria-controls="dash-password"
+                title={shown ? 'Hide password' : 'Show password'}
+              >
+                {shown ? <EyeOff /> : <Eye />}
+              </button>
               <span className="control-glow" aria-hidden="true" />
             </div>
             {error && (
