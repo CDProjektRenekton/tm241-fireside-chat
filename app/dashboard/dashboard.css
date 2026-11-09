@@ -615,12 +615,13 @@ a.head-btn {
   box-shadow: inset 2px 0 0 var(--s1);
 }
 
+/* the full label, wrapping onto more lines when it is long */
 .bar-label {
   min-width: 0;
-  overflow: hidden;
+  padding: 3px 0;
   font-size: 13.5px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  overflow-wrap: break-word;
   color: var(--ink);
 }
 
@@ -1009,7 +1010,10 @@ a.head-btn {
   padding-bottom: 14px;
 }
 
+/* position: relative keeps the screen-reader-only labels inside the scroller, so they can't
+   widen the page on tablets */
 .table-scroll {
+  position: relative;
   margin: 0 -20px;
   padding: 0 20px;
   overflow-x: auto;
@@ -1343,9 +1347,14 @@ a.head-btn {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .filter,
-  .filter select {
+  /* Each filter shares the row; its dropdown fills the filter's width. (A flex basis on the
+     dropdown itself would set its height, since a filter stacks label and dropdown vertically.) */
+  .filter {
     flex: 1 1 140px;
+  }
+
+  .filter select {
+    width: 100%;
     max-width: none;
   }
 
