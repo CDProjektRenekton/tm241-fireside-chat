@@ -46,6 +46,8 @@
   --warn-soft: rgba(255, 211, 143, 0.09);
   --info: #b4eaf7;
   --info-soft: rgba(94, 182, 211, 0.11);
+  /* dark glow behind small white text on the sky */
+  --halo: 0 0 4px rgba(5, 1, 34, 0.95), 0 1px 12px rgba(5, 1, 34, 0.75);
 
   --grad-kicker: linear-gradient(90deg, var(--mint), var(--periwinkle));
   --grad-accent: linear-gradient(100deg, var(--cyan-200) 0%, var(--cyan-400) 45%, var(--coral-400) 100%);
@@ -582,13 +584,20 @@ a {
   }
 }
 
+/* Small print on the sky: white, with a dark halo so it stays readable over the halftone dots
+   and the bright nebula (used by the topbar, organizer line, countdown label and footer). */
 .topbar-org {
   margin: 0;
+  /* sits on the halftone dots: a dark backing keeps it legible */
+  padding: 5px 14px;
+  border-radius: 14px;
+  background: rgba(5, 1, 34, 0.62);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 11.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: #fff;
+  text-shadow: var(--halo);
 }
 
 .topbar-org span {
@@ -738,12 +747,13 @@ a {
 .hero-organizer {
   margin: 22px 0 0;
   font-size: 13.5px;
-  color: var(--ink-3);
+  color: #fff;
+  text-shadow: var(--halo);
 }
 
 .hero-organizer b {
   font-weight: 400;
-  color: var(--ink);
+  color: #fff;
 }
 
 /* countdown */
@@ -761,7 +771,8 @@ a {
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: #fff;
+  text-shadow: var(--halo);
 }
 
 .countdown-label .tminus {
@@ -2783,7 +2794,8 @@ a {
 .page-foot p {
   margin: 0;
   font-size: 13px;
-  color: var(--ink-3);
+  color: #fff;
+  text-shadow: var(--halo);
 }
 
 .page-foot .foot-tagline {

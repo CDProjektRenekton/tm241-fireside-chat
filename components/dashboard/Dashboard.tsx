@@ -7,6 +7,7 @@ import { AFFILIATIONS, AGE_GROUPS, EVENT, SEXES, TOPIC_SHORT, TOPICS, type Topic
 import {
   applyFilters,
   computeStats,
+  dayKey,
   describeFilters,
   EMPTY_FILTERS,
   filtersToParams,
@@ -33,6 +34,7 @@ import {
   Sheet,
 } from '../Icons';
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
+import PrintReport from './PrintReport';
 import QuestionWall from './QuestionWall';
 import ResponsesTable from './ResponsesTable';
 import RoleDetailsCard from './RoleDetailsCard';
@@ -83,10 +85,19 @@ export default function Dashboard() {
     return () => window.clearInterval(id);
   }, [load]);
 
-  // Print every filtered row, not just the current table page.
+  // Printing (or "Save as PDF") swaps the dashboard for a report laid out for A4 (PrintReport),
+  // and names the file after the report rather than the page.
   useEffect(() => {
-    const before = () => flushSync(() => setPrinting(true));
-    const after = () => setPrinting(false);
+    let title = '';
+    const before = () => {
+      title = document.title;
+      document.title = `${EVENT.series} - Registration report - ${dayKey(new Date())}`;
+      flushSync(() => setPrinting(true));
+    };
+    const after = () => {
+      if (title) document.title = title;
+      setPrinting(false);
+    };
     window.addEventListener('beforeprint', before);
     window.addEventListener('afterprint', after);
     return () => {
@@ -507,7 +518,7 @@ export default function Dashboard() {
                 <h2>From the audience</h2>
                 <p>What registrants want to ask the speaker and hope to learn — ready for the moderator.</p>
               </header>
-              <QuestionWall rows={filtered} showAll={printing} />
+              <QuestionWall rows={filtered} showAll={false} />
             </section>
 
             <section className="card table-card">
@@ -515,9 +526,21 @@ export default function Dashboard() {
                 <h2>Registrations</h2>
                 <p>{plural(filtered.length, 'registration', 'registrations')} · newest first by default. Click a column to sort.</p>
               </header>
-              <ResponsesTable rows={filtered} dupKeys={dupKeys} showAll={printing} />
+              <ResponsesTable rows={filtered} dupKeys={dupKeys} showAll={false} />
             </section>
           </>
+        )}
+
+        {/* what Print / PDF puts on paper (the screen dashboard is hidden when printing) */}
+        {printing && payload && (
+          <PrintReport
+            rows={filtered}
+            stats={stats}
+            filterLabel={describeFilters(filters)}
+            totalAll={records.length}
+            fetchedAt={payload.fetchedAt}
+            dupKeys={dupKeys}
+          />
         )}
       </main>
     </div>

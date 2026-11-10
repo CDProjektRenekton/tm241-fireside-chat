@@ -1482,7 +1482,433 @@ a.head-btn {
 
 /* ---------------------------------------------------------------- print */
 
+/* ---------------------------------------------------------------- print / PDF report */
+
+/* Rendered only while printing (components/dashboard/PrintReport.tsx); never shown on screen. */
+.print-report {
+  display: none;
+}
+
 @media print {
+  @page {
+    size: A4;
+    margin: 14mm 13mm 16mm;
+
+    @bottom-left {
+      content: 'TM241 Fireside Chat · Registration report';
+      font: 7.5pt system-ui, sans-serif;
+      color: #5a6385;
+    }
+
+    @bottom-right {
+      content: 'Page ' counter(page) ' of ' counter(pages);
+      font: 7.5pt system-ui, sans-serif;
+      color: #5a6385;
+    }
+  }
+
+  /* the report replaces the interactive dashboard on paper */
+  .dash-head,
+  .dash-main > :not(.print-report) {
+    display: none !important;
+  }
+
+  .dash,
+  .dash-main {
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-report {
+    --pr-ink: #0a0b30;
+    --pr-ink-2: #3a4366;
+    --pr-muted: #5f6889;
+    --pr-line: #dfe4ee;
+    --pr-tint: #f3f6fb;
+    --pr-accent: #1c7fa6;
+    display: block;
+    color: var(--pr-ink);
+    font-family: var(--font);
+    font-size: 9.5pt;
+    line-height: 1.4;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-report h1,
+  .print-report h2,
+  .print-report h3,
+  .print-report p,
+  .print-report ol {
+    margin: 0;
+  }
+
+  /* header */
+  .pr-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2.5px solid var(--pr-accent);
+  }
+
+  .pr-logos {
+    display: flex;
+    gap: 6px;
+  }
+
+  .pr-logos img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+  }
+
+  .pr-kicker {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pr-accent);
+  }
+
+  .pr-head h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 24pt;
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: var(--pr-ink);
+  }
+
+  .pr-event {
+    font-size: 9pt;
+    color: var(--pr-ink-2);
+  }
+
+  .pr-scope {
+    margin-top: 10px !important;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--pr-tint);
+    font-size: 8.5pt;
+    color: var(--pr-ink-2);
+  }
+
+  .pr-scope b {
+    font-weight: 400;
+    color: var(--pr-ink);
+  }
+
+  /* key figures */
+  .pr-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .pr-kpi {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+    border: 1px solid var(--pr-line);
+    border-radius: 8px;
+    break-inside: avoid;
+  }
+
+  .pr-kpi span {
+    font-family: var(--mono);
+    font-size: 6.8pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pr-muted);
+  }
+
+  .pr-kpi b {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 20pt;
+    line-height: 1.1;
+    color: var(--pr-ink);
+  }
+
+  .pr-kpi small {
+    font-size: 7.5pt;
+    color: var(--pr-muted);
+  }
+
+  /* sections */
+  .pr-h2 {
+    margin: 20px 0 10px !important;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid var(--pr-accent);
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 15pt;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--pr-ink);
+    break-after: avoid;
+  }
+
+  .pr-new-page {
+    break-before: page;
+    margin-top: 0 !important;
+  }
+
+  .pr-lead {
+    margin: -4px 0 10px !important;
+  }
+
+  .pr-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    align-items: start;
+  }
+
+  .pr-block {
+    break-inside: avoid;
+  }
+
+  .pr-block h3 {
+    margin-bottom: 3px !important;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 10.5pt;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--pr-ink);
+    break-after: avoid;
+  }
+
+  .pr-note {
+    font-size: 7.8pt;
+    color: var(--pr-muted);
+  }
+
+  .pr-block .pr-note {
+    margin-bottom: 4px !important;
+  }
+
+  .pr-empty {
+    padding: 6px 0;
+    font-size: 8.5pt;
+    font-style: italic;
+    color: var(--pr-muted);
+  }
+
+  /* bar rows: label · bar · count · share */
+  .pr-bars {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+  }
+
+  .pr-bars tr {
+    break-inside: avoid;
+    border-bottom: 1px solid var(--pr-line);
+  }
+
+  .pr-bars th {
+    width: 46%;
+    padding: 3px 8px 3px 0;
+    font-weight: 400;
+    text-align: left;
+    color: var(--pr-ink);
+  }
+
+  .pr-bars th small {
+    display: block;
+    font-size: 7.2pt;
+    color: var(--pr-muted);
+  }
+
+  .pr-bar {
+    width: 34%;
+  }
+
+  .pr-bar span {
+    display: block;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--pr-accent);
+  }
+
+  .pr-num {
+    width: 9%;
+    padding-left: 6px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--pr-ink);
+  }
+
+  .pr-pct {
+    width: 11%;
+    padding-left: 4px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--pr-muted);
+  }
+
+  /* affiliation details */
+  .pr-role {
+    margin-bottom: 18px;
+  }
+
+  .pr-role > h3 {
+    margin-bottom: 8px !important;
+    padding: 4px 8px;
+    border-left: 3px solid var(--pr-accent);
+    background: var(--pr-tint);
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 12pt;
+    text-transform: uppercase;
+    color: var(--pr-ink);
+    break-after: avoid;
+  }
+
+  .pr-role > h3 span {
+    margin-left: 6px;
+    font-family: var(--font);
+    font-size: 8pt;
+    text-transform: none;
+    color: var(--pr-muted);
+  }
+
+  /* questions and hopes */
+  .pr-audience {
+    margin-bottom: 16px;
+  }
+
+  .pr-audience h3 {
+    margin-bottom: 6px !important;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 12pt;
+    text-transform: uppercase;
+    break-after: avoid;
+  }
+
+  .pr-audience h3 span {
+    color: var(--pr-muted);
+  }
+
+  .pr-audience ol {
+    padding-left: 22px;
+  }
+
+  .pr-audience li {
+    margin-bottom: 7px;
+    padding-left: 2px;
+    break-inside: avoid;
+  }
+
+  .pr-audience li::marker {
+    font-variant-numeric: tabular-nums;
+    color: var(--pr-accent);
+  }
+
+  .pr-audience li p {
+    font-size: 9.5pt;
+    color: var(--pr-ink);
+  }
+
+  .pr-audience li small {
+    font-size: 7.8pt;
+    color: var(--pr-muted);
+  }
+
+  /* registrant list */
+  .pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8pt;
+  }
+
+  .pr-table thead {
+    display: table-header-group; /* repeats on every page */
+  }
+
+  .pr-table th {
+    padding: 5px 6px;
+    background: var(--pr-ink);
+    font-family: var(--mono);
+    font-size: 6.6pt;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    color: #fff;
+  }
+
+  .pr-table th:nth-child(1) {
+    width: 4%;
+  }
+  .pr-table th:nth-child(2) {
+    width: 25%;
+  }
+  .pr-table th:nth-child(3) {
+    width: 19%;
+  }
+  .pr-table th:nth-child(4) {
+    width: 22%;
+  }
+  .pr-table th:nth-child(5) {
+    width: 10%;
+  }
+  .pr-table th:nth-child(6),
+  .pr-table th:nth-child(7) {
+    width: 10%;
+  }
+
+  .pr-table tr {
+    break-inside: avoid;
+  }
+
+  .pr-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--pr-line);
+    vertical-align: top;
+    color: var(--pr-ink);
+    overflow-wrap: break-word;
+  }
+
+  .pr-table tbody tr:nth-child(even) td {
+    background: var(--pr-tint);
+  }
+
+  .pr-table td b {
+    display: block;
+    font-weight: 400;
+    font-size: 8.8pt;
+  }
+
+  .pr-table td small {
+    display: block;
+    font-size: 7.2pt;
+    color: var(--pr-muted);
+  }
+
+  .pr-table .pr-email {
+    overflow-wrap: anywhere;
+  }
+
+  .pr-table .pr-mono {
+    font-family: var(--mono);
+    font-size: 6.8pt;
+  }
+
+  .pr-table .pr-n {
+    color: var(--pr-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* the rest: the interactive dashboard's own print fallbacks */
   :root {
     --ink: #0a0b30;
     --ink-2: #333a5c;
