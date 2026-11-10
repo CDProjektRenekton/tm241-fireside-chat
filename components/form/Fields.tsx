@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, type ReactNode } from 'react';
+import { Fragment, memo, useState, type ReactNode } from 'react';
 import { YEARS_MAX } from '@/lib/roles';
 import { Alert, Check, ChevronDown, Minus, Plus } from '../Icons';
 
@@ -142,6 +142,27 @@ interface CardChoiceProps extends LabelProps {
   error?: string;
   className?: string;
   children?: ReactNode;
+  /** Opens like an accordion right under the chosen card (full width), e.g. follow-up questions. */
+  detail?: ReactNode;
+}
+
+/**
+ * The accordion panel under a chosen card: unfolds (pushing the cards below it down), then lets
+ * its content overflow again so focus rings and shadows aren't clipped.
+ */
+function Unfold({ side, children }: { side: 'left' | 'right'; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      className={`card-detail${open ? ' is-open' : ''}`}
+      data-side={side}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget) setOpen(true);
+      }}
+    >
+      <div className="card-detail-in">{children}</div>
+    </div>
+  );
 }
 
 /** Single-choice cards (radio group). */
@@ -168,28 +189,31 @@ function CardChoiceImpl(p: CardChoiceProps) {
           </p>
         )}
         <div className={`cards ${p.className ?? ''}`}>
-          {p.options.map((o) => {
+          {p.options.map((o, i) => {
             const checked = p.value === o.value;
             return (
-              <label key={o.value} className={`card-choice${checked ? ' is-checked' : ''}`}>
-                <input
-                  type="radio"
-                  name={p.name}
-                  value={o.value}
-                  checked={checked}
-                  onChange={() => {
-                    p.onChange(o.value);
-                    setPulse(o.value);
-                  }}
-                />
-                {o.icon && <span className="card-icon">{o.icon}</span>}
-                <span className="card-text">
-                  <b>{o.label}</b>
-                  {o.sub && <small>{o.sub}</small>}
-                </span>
-                <span className="card-dot" aria-hidden="true" />
-                {pulse === o.value && checked && <Burst key={o.value} />}
-              </label>
+              <Fragment key={o.value}>
+                <label className={`card-choice${checked ? ' is-checked' : ''}`}>
+                  <input
+                    type="radio"
+                    name={p.name}
+                    value={o.value}
+                    checked={checked}
+                    onChange={() => {
+                      p.onChange(o.value);
+                      setPulse(o.value);
+                    }}
+                  />
+                  {o.icon && <span className="card-icon">{o.icon}</span>}
+                  <span className="card-text">
+                    <b>{o.label}</b>
+                    {o.sub && <small>{o.sub}</small>}
+                  </span>
+                  <span className="card-dot" aria-hidden="true" />
+                  {pulse === o.value && checked && <Burst key={o.value} />}
+                </label>
+                {checked && p.detail && <Unfold side={i % 2 ? 'right' : 'left'}>{p.detail}</Unfold>}
+              </Fragment>
             );
           })}
         </div>

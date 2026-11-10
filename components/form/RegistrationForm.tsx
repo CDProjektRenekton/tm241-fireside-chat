@@ -441,33 +441,33 @@ export default function RegistrationForm() {
               value={data.affiliation}
               onChange={pickAffiliation}
               error={errors.affiliation}
-            >
-              {data.affiliation === 'Other' && (
-                <div className="other-box">
-                  <TextField
-                    name="affiliationOther"
-                    label="Other affiliation"
-                    bare
-                    autoFocus
-                    placeholder="Please specify your affiliation"
-                    value={data.affiliationOther}
-                    onChange={set('affiliationOther')}
-                    error={errors.affiliationOther}
+              detail={
+                // opens like an accordion right under the chosen card
+                data.affiliation === 'Other' ? (
+                  <div className="other-box">
+                    <TextField
+                      name="affiliationOther"
+                      label="Other affiliation"
+                      bare
+                      autoFocus
+                      placeholder="Please specify your affiliation"
+                      value={data.affiliationOther}
+                      onChange={set('affiliationOther')}
+                      error={errors.affiliationOther}
+                    />
+                  </div>
+                ) : data.affiliation ? (
+                  <RoleDetails
+                    affiliation={data.affiliation}
+                    icon={AFFILIATION_ICONS[data.affiliation]}
+                    number={6}
+                    data={data}
+                    errors={errors}
+                    set={set}
                   />
-                </div>
-              )}
-            </CardChoice>
-            {data.affiliation && (
-              <RoleDetails
-                key={data.affiliation}
-                affiliation={data.affiliation}
-                icon={AFFILIATION_ICONS[data.affiliation]}
-                number={6}
-                data={data}
-                errors={errors}
-                set={set}
-              />
-            )}
+                ) : null
+              }
+            />
           </div>
         )}
 

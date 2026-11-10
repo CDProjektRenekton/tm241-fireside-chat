@@ -1732,14 +1732,76 @@ a {
   animation: field-in 0.45s var(--ease-out);
 }
 
-/* follow-up questions for the chosen affiliation */
-.section > .role-panel {
-  animation: role-in 0.6s var(--ease-out) both;
+/* Accordion: the chosen card's follow-up questions (or "Please specify" box) open right under
+   it, across the full width. "dense" lets the card beside the chosen one keep its place. */
+.cards-affiliation {
+  grid-auto-flow: row dense;
 }
 
+.card-detail {
+  --tether: 30px; /* under the chosen card's icon */
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-rows: 1fr;
+  margin: 6px 0 4px;
+  animation: unfold 0.5s var(--ease-out) both;
+}
+
+.card-detail[data-side='right'] {
+  --tether: calc(50% + 35px);
+}
+
+.card-detail-in {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* once open, let focus rings and shadows show */
+.card-detail.is-open .card-detail-in {
+  overflow: visible;
+}
+
+@keyframes unfold {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0.2;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* a short glowing tether from the chosen card down to its panel */
+.card-detail::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: var(--tether);
+  top: -17px;
+  width: 2px;
+  height: 18px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: linear-gradient(var(--cyan-200), var(--cyan-400));
+  box-shadow: 0 0 10px rgba(94, 182, 211, 0.9);
+}
+
+.card-detail .other-box {
+  margin-top: 0;
+}
+
+@media (max-width: 440px) {
+  .card-detail[data-side='right'] {
+    --tether: 30px;
+  }
+}
+
+/* follow-up questions for the chosen affiliation */
 .role-panel {
   position: relative;
-  margin: -6px 0 24px;
+  margin: 0;
   padding: 18px 20px 4px;
   border-radius: 20px;
   border: 1px solid rgba(94, 182, 211, 0.3);
@@ -1749,29 +1811,16 @@ a {
   box-shadow: 0 18px 40px -28px rgba(94, 182, 211, 0.8);
 }
 
-/* a short accent line along the top edge */
+/* a short accent line along the top edge, centred on the tether */
 .role-panel::before {
   content: '';
   position: absolute;
-  left: 20px;
+  left: clamp(20px, calc(var(--tether, 68px) - 48px), calc(100% - 116px));
   top: -1px;
   width: 96px;
   height: 2px;
   border-radius: 2px;
   background: var(--grad-accent);
-}
-
-@keyframes role-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.985);
-    clip-path: inset(0 0 100% 0 round 20px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    clip-path: inset(0 0 0 0 round 20px);
-  }
 }
 
 .role-panel > .field {
