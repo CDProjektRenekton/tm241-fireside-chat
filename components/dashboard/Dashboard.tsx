@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { AFFILIATIONS, EVENT, TOPIC_SHORT, TOPICS, type Topic } from '@/lib/config';
+import { AFFILIATIONS, AGE_GROUPS, EVENT, SEXES, TOPIC_SHORT, TOPICS, type Topic } from '@/lib/config';
 import {
   applyFilters,
   computeStats,
@@ -100,7 +100,7 @@ export default function Dashboard() {
   const dupKeys = useMemo(() => findDuplicates(records), [records]);
 
   const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((f) => ({ ...f, [key]: value }));
-  const toggleFilter = (key: 'affiliation' | 'topic', value: string) =>
+  const toggleFilter = (key: 'affiliation' | 'topic' | 'sex' | 'age', value: string) =>
     setFilters((f) => ({ ...f, [key]: f[key] === value ? '' : value }));
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS);
 
@@ -146,6 +146,9 @@ export default function Dashboard() {
   }
 
   const topTopic = stats.byTopic.find((t) => t.count > 0);
+  // Shares of those who were asked: registrations from before the questions existed are left out.
+  const sexAnswered = stats.bySex.reduce((n, s) => n + s.count, 0);
+  const ageAnswered = stats.byAge.reduce((n, a) => n + a.count, 0);
 
   return (
     <div className="dash">
@@ -242,6 +245,24 @@ export default function Dashboard() {
                   onChange={(e) => setFilter('q', e.target.value)}
                 />
               </span>
+            </label>
+            <label className="filter">
+              <span>Sex</span>
+              <select value={filters.sex} onChange={(e) => setFilter('sex', e.target.value)}>
+                <option value="">Everyone</option>
+                {SEXES.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </label>
+            <label className="filter">
+              <span>Age group</span>
+              <select value={filters.age} onChange={(e) => setFilter('age', e.target.value)}>
+                <option value="">All ages</option>
+                {AGE_GROUPS.map((a) => (
+                  <option key={a}>{a}</option>
+                ))}
+              </select>
             </label>
             <label className="filter">
               <span>Affiliation</span>
@@ -397,6 +418,52 @@ export default function Dashboard() {
                     ],
                   }))}
                 />
+              </article>
+
+              <article className="card card-wide">
+                <header className="card-head">
+                  <h2>Sex and age group</h2>
+                  <p>Registrants per group, for sex- and age-disaggregated reports. Click a bar to filter the dashboard.</p>
+                </header>
+                <div className="demo-grid">
+                  <div>
+                    <h3 className="sub-head">Sex</h3>
+                    <BarList
+                      unit="registrants"
+                      picked={filters.sex}
+                      onPick={(k) => toggleFilter('sex', k)}
+                      items={stats.bySex.map((s) => ({
+                        key: s.label,
+                        label: s.label,
+                        value: s.count,
+                        extra: `${pct(s.count, sexAnswered)}%`,
+                        tip: [{ value: fmt(s.count), label: `registrants · ${pct(s.count, sexAnswered)}% of those asked`, color: 'var(--s1)' }],
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="sub-head">Age group</h3>
+                    <BarList
+                      unit="registrants"
+                      picked={filters.age}
+                      onPick={(k) => toggleFilter('age', k)}
+                      items={stats.byAge.map((a) => ({
+                        key: a.label,
+                        label: a.label,
+                        value: a.count,
+                        extra: `${pct(a.count, ageAnswered)}%`,
+                        tip: [{ value: fmt(a.count), label: `registrants · ${pct(a.count, ageAnswered)}% of those asked`, color: 'var(--s1)' }],
+                      }))}
+                    />
+                  </div>
+                </div>
+                {stats.demographicsNotAsked > 0 && (
+                  <p className="muted demo-note">
+                    {plural(stats.demographicsNotAsked, 'registration', 'registrations')} from before these questions were added{' '}
+                    {stats.demographicsNotAsked === 1 ? 'has' : 'have'} no answer and {stats.demographicsNotAsked === 1 ? 'is' : 'are'} not
+                    counted here.
+                  </p>
+                )}
               </article>
 
               <article className="card">

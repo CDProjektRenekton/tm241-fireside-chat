@@ -44,6 +44,8 @@ export async function POST(req: Request) {
     [F.ref]: ref,
     [F.submittedAt]: new Date().toISOString(),
     [F.name]: input.name,
+    [F.sex]: input.sex,
+    [F.ageGroup]: input.ageGroup,
     [F.email]: input.email,
     [F.organization]: input.organization,
     [F.affiliation]: input.affiliation,

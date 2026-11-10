@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AFFILIATIONS, EVENT, TOPICS } from '@/lib/config';
+import { AFFILIATIONS, AGE_GROUPS, EVENT, SEXES, TOPICS } from '@/lib/config';
 import type { FieldErrors, RegistrationInput } from '@/lib/types';
 import { LIMITS, STEP_VALIDATORS, stepOf, validateAll } from '@/lib/validation';
 import {
@@ -28,13 +28,15 @@ import {
   User,
 } from '../Icons';
 import CardSweep from '../CardSweep';
-import { CardChoice, ChipChoice, fieldId, TextField } from './Fields';
+import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from './Fields';
 import { CopyRef, downloadInvite, Liftoff, MissionPass } from './MissionPass';
 
 const DRAFT_KEY = 'tm241-fc-draft-v1';
 
 const initialData = (): RegistrationInput => ({
   name: '',
+  sex: '',
+  ageGroup: '',
   email: '',
   organization: '',
   affiliation: '',
@@ -63,6 +65,8 @@ const ICON_USER = <User />;
 const ICON_MAIL = <Mail />;
 const ICON_BUILDING = <Building />;
 
+const SEX_OPTIONS = SEXES.map((s) => ({ value: s, label: s }));
+const AGE_OPTIONS = AGE_GROUPS.map((a) => ({ value: a, label: a }));
 const AFFILIATION_OPTIONS = AFFILIATIONS.map((a) => ({ value: a, label: a, icon: AFFILIATION_ICONS[a] }));
 const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
 const CONSENT_OPTIONS = [
@@ -368,9 +372,31 @@ export default function RegistrationForm() {
               onChange={set('name')}
               error={errors.name}
             />
+            <PillChoice
+              name="sex"
+              number={2}
+              label="Sex"
+              hint="Used only for group totals in event reports."
+              required
+              segmented
+              options={SEX_OPTIONS}
+              value={data.sex}
+              onChange={set('sex') as (v: string) => void}
+              error={errors.sex}
+            />
+            <PillChoice
+              name="ageGroup"
+              number={3}
+              label="Age group"
+              required
+              options={AGE_OPTIONS}
+              value={data.ageGroup}
+              onChange={set('ageGroup') as (v: string) => void}
+              error={errors.ageGroup}
+            />
             <TextField
               name="email"
-              number={2}
+              number={4}
               label="Email"
               required
               type="email"
@@ -384,7 +410,7 @@ export default function RegistrationForm() {
             />
             <TextField
               name="organization"
-              number={3}
+              number={5}
               label="University / Organization"
               required
               autoComplete="organization"
@@ -396,7 +422,7 @@ export default function RegistrationForm() {
             />
             <CardChoice
               name="affiliation"
-              number={4}
+              number={6}
               label="Current Affiliation"
               hint="Mark only one."
               required
@@ -433,7 +459,7 @@ export default function RegistrationForm() {
 
             <ChipChoice
               name="topics"
-              number={5}
+              number={7}
               label="Which topics interest you most?"
               hint="Check all that apply."
               options={TOPIC_OPTIONS}
@@ -458,7 +484,7 @@ export default function RegistrationForm() {
             </ChipChoice>
             <TextField
               name="question"
-              number={6}
+              number={8}
               label="Do you have a question for our guest speaker?"
               multiline
               rows={4}
@@ -470,7 +496,7 @@ export default function RegistrationForm() {
             />
             <TextField
               name="hopes"
-              number={7}
+              number={9}
               label="What do you hope to learn from this Fireside Chat?"
               multiline
               rows={4}
@@ -519,7 +545,7 @@ export default function RegistrationForm() {
               </p>
               <CardChoice
                 name="consent"
-                number={8}
+                number={10}
                 label="I voluntarily consent to the collection and processing of my information for event registration, attendance monitoring, and event coordination."
                 required
                 className="cards-consent"

@@ -24,6 +24,14 @@ export const EVENT = {
 
 export const venueFull = () => `${EVENT.venue}, ${EVENT.venueCampus}`;
 
+/** "Sex" — reported only as group totals (e.g. sex-disaggregated attendance). */
+export const SEXES = ['Female', 'Male', 'Prefer not to say'] as const;
+export type Sex = (typeof SEXES)[number];
+
+/** "Age group" — in the order they should be listed and charted. */
+export const AGE_GROUPS = ['Under 18', '18–24', '25–34', '35–44', '45–54', '55 and over', 'Prefer not to say'] as const;
+export type AgeGroup = (typeof AGE_GROUPS)[number];
+
 /** "Current Affiliation" — mark only one. */
 export const AFFILIATIONS = [
   'Undergraduate Student',

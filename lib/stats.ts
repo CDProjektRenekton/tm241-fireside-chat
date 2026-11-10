@@ -1,12 +1,15 @@
 // Filtering and summary statistics shared by the dashboard and the export endpoint,
 // so the numbers on screen always match the downloaded file.
-import { AFFILIATIONS, STUDENT_AFFILIATIONS, TOPICS } from './config';
+import { AFFILIATIONS, AGE_GROUPS, SEXES, STUDENT_AFFILIATIONS, TOPICS } from './config';
 import type { Registration } from './types';
 
 export type RangeKey = 'all' | 'today' | '7d' | '30d';
 
 export interface Filters {
   q: string;
+  sex: string;
+  /** Age group */
+  age: string;
   affiliation: string;
   topic: string;
   question: '' | 'yes' | 'no';
@@ -15,7 +18,7 @@ export interface Filters {
   range: RangeKey;
 }
 
-export const EMPTY_FILTERS: Filters = { q: '', affiliation: '', topic: '', question: '', attended: '', range: 'all' };
+export const EMPTY_FILTERS: Filters = { q: '', sex: '', age: '', affiliation: '', topic: '', question: '', attended: '', range: 'all' };
 
 export const RANGE_LABELS: Record<RangeKey, string> = {
   all: 'All time',
@@ -52,6 +55,8 @@ export function filtersFromParams(p: URLSearchParams): Filters {
   const attended = p.get('attended');
   return {
     q: p.get('q') ?? '',
+    sex: p.get('sex') ?? '',
+    age: p.get('age') ?? '',
     affiliation: p.get('affiliation') ?? '',
     topic: p.get('topic') ?? '',
     question: question === 'yes' || question === 'no' ? question : '',
@@ -69,6 +74,8 @@ export function filtersToParams(f: Filters) {
 export function describeFilters(f: Filters) {
   const parts: string[] = [];
   if (f.range !== 'all') parts.push(RANGE_LABELS[f.range]);
+  if (f.sex) parts.push(`Sex: ${f.sex}`);
+  if (f.age) parts.push(`Age group: ${f.age}`);
   if (f.affiliation) parts.push(f.affiliation);
   if (f.topic) parts.push(`Interested in “${f.topic}”`);
   if (f.question) parts.push(f.question === 'yes' ? 'With a question for the speaker' : 'Without a question');
@@ -85,6 +92,8 @@ export function applyFilters(rows: Registration[], f: Filters, now = new Date())
     since = dayKey(new Date(now.getTime() - days * 86_400_000));
   }
   return rows.filter((r) => {
+    if (f.sex && r.sex !== f.sex) return false;
+    if (f.age && r.ageGroup !== f.age) return false;
     if (f.affiliation && r.affiliation !== f.affiliation) return false;
     if (f.topic && !r.topics.includes(f.topic)) return false;
     if (f.question === 'yes' && !r.question) return false;
@@ -126,6 +135,12 @@ export interface Stats {
   today: number;
   /** Checked in at the event. */
   attended: number;
+  /** In the form's order (not sorted by count). */
+  bySex: { label: string; count: number }[];
+  /** Youngest to oldest, then "Prefer not to say". */
+  byAge: { label: string; count: number }[];
+  /** Registered before the sex and age questions were added, so they have no answer. */
+  demographicsNotAsked: number;
   byAffiliation: { label: string; count: number }[];
   byTopic: { topic: string; count: number }[];
   /** Registrants who picked at least one topic. */
@@ -179,6 +194,9 @@ export function computeStats(rows: Registration[], now = new Date()): Stats {
     hopes: rows.filter((r) => r.hopes).length,
     today: rows.filter((r) => dayKey(r.submittedAt) === todayKey).length,
     attended: rows.filter((r) => r.attended).length,
+    bySex: SEXES.map((s) => ({ label: s as string, count: rows.filter((r) => r.sex === s).length })),
+    byAge: AGE_GROUPS.map((a) => ({ label: a as string, count: rows.filter((r) => r.ageGroup === a).length })),
+    demographicsNotAsked: rows.filter((r) => !r.sex && !r.ageGroup).length,
     byAffiliation: byAffiliation.sort((a, b) => b.count - a.count || AFFILIATIONS.indexOf(a.label as never) - AFFILIATIONS.indexOf(b.label as never)),
     byTopic: TOPICS.map((t) => ({ topic: t as string, count: rows.filter((r) => r.topics.includes(t)).length })).sort(
       (a, b) => b.count - a.count,

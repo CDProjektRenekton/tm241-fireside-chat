@@ -221,6 +221,14 @@ export default function ResponsesTable({
             </div>
             <dl className="detail-grid">
               <div>
+                <dt>Sex</dt>
+                <dd>{selected.sex || <span className="muted">Not asked (registered earlier)</span>}</dd>
+              </div>
+              <div>
+                <dt>Age group</dt>
+                <dd>{selected.ageGroup || <span className="muted">Not asked (registered earlier)</span>}</dd>
+              </div>
+              <div>
                 <dt>University / Organization</dt>
                 <dd>{selected.organization || '—'}</dd>
               </div>

@@ -10,6 +10,8 @@ const REG_HEADERS = [
   'Reference No.',
   'Submitted At',
   'Name',
+  'Sex',
+  'Age Group',
   'Email',
   'University/Organization',
   'Current Affiliation',
@@ -28,6 +30,8 @@ function registrationRows(rows: Registration[]): Row[] {
     'Reference No.': r.ref,
     'Submitted At': formatDateTime(r.submittedAt),
     Name: r.name,
+    Sex: r.sex,
+    'Age Group': r.ageGroup,
     Email: r.email,
     'University/Organization': r.organization,
     'Current Affiliation': affiliationLabel(r),
@@ -221,6 +225,17 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     ['Shared what they hope to learn', stats.hopes],
     ['Possible duplicate registrations (same email)', stats.duplicates],
   ]);
+  const notAsked: (string | number)[][] = stats.demographicsNotAsked
+    ? [['Not asked (registered before the question was added)', stats.demographicsNotAsked, share(stats.demographicsNotAsked, stats.total)]]
+    : [];
+  section('Sex', ['Sex', 'Registrants', 'Share'], [
+    ...stats.bySex.map((s) => [s.label, s.count, share(s.count, stats.total)]),
+    ...notAsked,
+  ]);
+  section('Age group', ['Age group', 'Registrants', 'Share'], [
+    ...stats.byAge.map((a) => [a.label, a.count, share(a.count, stats.total)]),
+    ...notAsked,
+  ]);
   section(
     'Current affiliation',
     ['Affiliation', 'Registrants', 'Share'],
@@ -241,6 +256,8 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     'Reference No.': 18,
     'Submitted At': 22,
     Name: 28,
+    Sex: 18,
+    'Age Group': 18,
     Email: 30,
     'University/Organization': 32,
     'Current Affiliation': 24,

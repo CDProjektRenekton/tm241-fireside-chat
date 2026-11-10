@@ -1686,6 +1686,49 @@ a {
   transform: scale(1);
 }
 
+/* single-choice pills (sex, age group): a chip with a radio dot */
+.chip-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s,
+    background 0.25s;
+}
+
+.chip-radio.is-checked .chip-dot {
+  border-color: var(--cyan-300);
+  background: radial-gradient(circle, #fff 0 3.5px, var(--cyan-400) 4px);
+  box-shadow: 0 0 10px rgba(94, 182, 211, 0.85);
+}
+
+.has-error .chip:not(.is-checked) {
+  border-color: rgba(255, 143, 154, 0.45);
+}
+
+/* equal-width segments in one row */
+.chips-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 520px) {
+  /* single-choice pills: two per row on phones; an odd last one takes the full row */
+  .chips-pills {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chips-pills > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 .other-box {
   margin-top: 12px;
   animation: field-in 0.45s var(--ease-out);

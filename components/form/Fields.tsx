@@ -196,6 +196,67 @@ function CardChoiceImpl(p: CardChoiceProps) {
   );
 }
 
+interface PillChoiceProps extends LabelProps {
+  name: string;
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (v: string) => void;
+  error?: string;
+  /** Equal-width segments in one row, for a few short options (e.g. Female / Male / Prefer not to say). */
+  segmented?: boolean;
+}
+
+/** Single-choice pills (radio group) — compact, for short answer lists such as age ranges. */
+function PillChoiceImpl(p: PillChoiceProps) {
+  const id = fieldId(p.name);
+  const [pulse, setPulse] = useState('');
+  return (
+    <div className={`field${p.error ? ' has-error' : ''}`}>
+      <div
+        role="radiogroup"
+        id={id}
+        tabIndex={-1}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={[p.hint && `${id}-hint`, p.error && `${id}-err`].filter(Boolean).join(' ') || undefined}
+        aria-required={p.required}
+        aria-invalid={p.error ? true : undefined}
+      >
+        <p className="label" id={`${id}-label`}>
+          <LabelText {...p} />
+        </p>
+        {p.hint && (
+          <p className="field-hint" id={`${id}-hint`}>
+            {p.hint}
+          </p>
+        )}
+        <div className={`chips chips-pills${p.segmented ? ' chips-seg' : ''}`}>
+          {p.options.map((o) => {
+            const checked = p.value === o.value;
+            return (
+              <label key={o.value} className={`chip chip-radio${checked ? ' is-checked' : ''}`}>
+                <input
+                  type="radio"
+                  name={p.name}
+                  value={o.value}
+                  checked={checked}
+                  onChange={() => {
+                    p.onChange(o.value);
+                    setPulse(o.value);
+                  }}
+                />
+                <span className="chip-dot" aria-hidden="true" />
+                <span className="chip-text">{o.label}</span>
+                {pulse === o.value && checked && <Burst key={o.value} />}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      <FieldError id={id} error={p.error} />
+    </div>
+  );
+}
+
 interface ChipChoiceProps extends LabelProps {
   name: string;
   values: string[];
@@ -257,4 +318,5 @@ function ChipChoiceImpl(p: ChipChoiceProps) {
 // (Noticeable on slower phones, where re-rendering every field per keystroke caused jank.)
 export const TextField = memo(TextFieldImpl);
 export const CardChoice = memo(CardChoiceImpl);
+export const PillChoice = memo(PillChoiceImpl);
 export const ChipChoice = memo(ChipChoiceImpl);

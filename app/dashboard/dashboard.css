@@ -573,6 +573,39 @@ a.head-btn {
   margin-bottom: 14px;
 }
 
+/* a card that spans both columns (sex and age group, side by side) */
+.chart-grid .card-wide {
+  grid-column: 1 / -1;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 32px;
+}
+
+.sub-head {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.demo-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+}
+
+@media (max-width: 860px) {
+  .demo-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+
 .card {
   padding: 18px 20px 20px;
   border-radius: 20px;

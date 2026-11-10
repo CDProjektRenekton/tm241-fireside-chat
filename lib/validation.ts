@@ -1,5 +1,5 @@
 // Shared by the form (instant feedback) and /api/submit (the authority).
-import { AFFILIATIONS, TOPICS } from './config';
+import { AFFILIATIONS, AGE_GROUPS, SEXES, TOPICS } from './config';
 import type { FieldErrors, RegistrationInput } from './types';
 
 export const MSG = {
@@ -46,6 +46,8 @@ function text(errors: FieldErrors, key: string, value: string, max = LIMITS.shor
 export function validateStep1(d: RegistrationInput): FieldErrors {
   const e: FieldErrors = {};
   text(e, 'name', d.name, LIMITS.name);
+  if (!SEXES.includes(d.sex as never)) e.sex = MSG.choose;
+  if (!AGE_GROUPS.includes(d.ageGroup as never)) e.ageGroup = MSG.choose;
   if (!d.email) e.email = MSG.required;
   else if (!isEmail(d.email)) e.email = MSG.email;
   text(e, 'organization', d.organization);
@@ -98,6 +100,8 @@ export function normalizeInput(body: unknown): RegistrationInput {
   const affiliation = clean(b.affiliation) as RegistrationInput['affiliation'];
   return {
     name: clean(b.name, LIMITS.name),
+    sex: clean(b.sex) as RegistrationInput['sex'],
+    ageGroup: clean(b.ageGroup) as RegistrationInput['ageGroup'],
     email: clean(b.email).toLowerCase(),
     organization: clean(b.organization),
     affiliation,

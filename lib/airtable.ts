@@ -244,6 +244,8 @@ function toRegistration(r: AirtableRecord): Registration {
     ref: str(f[F.ref]),
     submittedAt: str(f[F.submittedAt]) || r.createdTime,
     name: str(f[F.name]),
+    sex: str(f[F.sex]),
+    ageGroup: str(f[F.ageGroup]),
     email: str(f[F.email]),
     organization: str(f[F.organization]),
     affiliation: str(f[F.affiliation]),

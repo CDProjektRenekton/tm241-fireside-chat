@@ -1,8 +1,10 @@
-import type { Affiliation } from './config';
+import type { Affiliation, AgeGroup, Sex } from './config';
 
 /** What the browser sends to /api/submit. */
 export interface RegistrationInput {
   name: string;
+  sex: Sex | '';
+  ageGroup: AgeGroup | '';
   email: string;
   organization: string;
   affiliation: Affiliation | '';
@@ -22,6 +24,10 @@ export interface Registration {
   ref: string;
   submittedAt: string;
   name: string;
+  /** One of SEXES; empty for registrations made before the question was added. */
+  sex: string;
+  /** One of AGE_GROUPS; empty for registrations made before the question was added. */
+  ageGroup: string;
   email: string;
   organization: string;
   /** One of AFFILIATIONS (or a value someone typed into Airtable directly). */

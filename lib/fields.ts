@@ -1,10 +1,12 @@
-import { AFFILIATIONS, TOPICS } from './config';
+import { AFFILIATIONS, AGE_GROUPS, SEXES, TOPICS } from './config';
 
 /** Airtable column names. Renaming a column in Airtable requires renaming it here too. */
 export const F = {
   ref: 'Reference No.',
   submittedAt: 'Submitted At',
   name: 'Name',
+  sex: 'Sex',
+  ageGroup: 'Age Group',
   email: 'Email',
   organization: 'University/Organization',
   affiliation: 'Current Affiliation',
@@ -60,6 +62,18 @@ export const FIELD_SPECS: FieldSpec[] = [
     options: { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' },
   },
   { name: F.name, type: 'singleLineText', description: 'Full name of the registrant.' },
+  {
+    name: F.sex,
+    type: 'singleSelect',
+    description: 'Sex. Reported only as group totals.',
+    options: choices(SEXES, ['purpleLight2', 'tealLight2', 'grayLight2']),
+  },
+  {
+    name: F.ageGroup,
+    type: 'singleSelect',
+    description: 'Age group. Reported only as group totals.',
+    options: choices(AGE_GROUPS, ['yellowLight2', 'greenLight2', 'tealLight2', 'cyanLight2', 'blueLight2', 'purpleLight2', 'grayLight2']),
+  },
   { name: F.email, type: 'email' },
   { name: F.organization, type: 'singleLineText', description: 'University or organization.' },
   {
