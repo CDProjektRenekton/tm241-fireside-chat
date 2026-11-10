@@ -46,8 +46,8 @@
   --warn-soft: rgba(255, 211, 143, 0.09);
   --info: #b4eaf7;
   --info-soft: rgba(94, 182, 211, 0.11);
-  /* dark glow behind small white text on the sky */
-  --halo: 0 0 4px rgba(5, 1, 34, 0.95), 0 1px 12px rgba(5, 1, 34, 0.75);
+  /* light shadow behind small white text on the sky */
+  --halo: 0 1px 3px rgba(5, 1, 34, 0.55);
 
   --grad-kicker: linear-gradient(90deg, var(--mint), var(--periwinkle));
   --grad-accent: linear-gradient(100deg, var(--cyan-200) 0%, var(--cyan-400) 45%, var(--coral-400) 100%);
@@ -562,16 +562,12 @@ a {
   gap: 14px;
 }
 
+/* held still (no float): the seals read as formal marks */
 .logo-bar .logo {
   width: 64px;
   height: 64px;
   object-fit: contain;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45));
-  animation: logo-float 7s ease-in-out infinite;
-}
-
-.logo-bar .logo:nth-child(2) {
-  animation-delay: -3.5s;
 }
 
 @keyframes logo-float {
@@ -584,14 +580,10 @@ a {
   }
 }
 
-/* Small print on the sky: white, with a dark halo so it stays readable over the halftone dots
-   and the bright nebula (used by the topbar, organizer line, countdown label and footer). */
+/* Small print on the sky: white with a light shadow (--halo), as are the organizer line,
+   countdown label and footer line. */
 .topbar-org {
   margin: 0;
-  /* sits on the halftone dots: a dark backing keeps it legible */
-  padding: 5px 14px;
-  border-radius: 14px;
-  background: rgba(5, 1, 34, 0.62);
   font-family: var(--mono);
   font-size: 11.5px;
   letter-spacing: 0.18em;
@@ -2791,15 +2783,16 @@ a {
   animation: rise 1s var(--ease-out) 0.6s backwards;
 }
 
-.page-foot p {
+.page-foot p:not(.foot-tagline) {
   margin: 0;
   font-size: 13px;
   color: #fff;
   text-shadow: var(--halo);
 }
 
+/* gradient lettering (see-through text), so no text-shadow here: it would show through dark */
 .page-foot .foot-tagline {
-  margin-bottom: 6px;
+  margin: 0 0 6px;
   font-family: var(--display);
   font-size: 18px;
   font-style: italic;
