@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EVENT } from '@/lib/config';
 import GradientCanvas from './GradientCanvas';
+import SplashLogo from './SplashLogo';
 import { SPLASH_NEBULA } from './nebula';
 
 const SHOW_MS = 5200;
@@ -13,14 +14,14 @@ const SHOW_MS_REDUCED = 1200;
 const LEAVE_MS = 1150;
 const SEEN_KEY = 'tm241-fc-splash-seen';
 
-const TITLE = ['Leading', 'from', 'the', 'Start'];
-
 type Phase = 'show' | 'leaving' | 'gone';
 
 /**
  * Hyperspace intro: the star field streaks past, orbit rings draw around the UP and TMC seals,
- * "Leading from the Start" rises letter by letter, a launch bar counts down, then everything
- * jumps to warp and the form is revealed. Click, tap, Enter, Space or Escape skips it.
+ * the "Leading from the Start" logo assembles ("Liftoff": the chevron A launches, the lettering
+ * follows, a comet draws the orbit and lights the star — see app/splash-logo.css), a launch bar
+ * counts down, then everything jumps to warp and the form is revealed. Click, tap, Enter, Space
+ * or Escape skips it.
  */
 export default function Splash() {
   const [phase, setPhase] = useState<Phase>('show');
@@ -187,7 +188,6 @@ export default function Splash() {
 
   if (phase === 'gone') return null;
 
-  let letter = 0;
   return (
     <div
       className={`splash${quick ? ' is-quick' : ''}${phase === 'leaving' ? ' is-leaving' : ''}`}
@@ -238,16 +238,9 @@ export default function Splash() {
         <p className="splash-kicker">
           <span>{EVENT.series}</span>
         </p>
-        <h1 className="splash-title" aria-label={EVENT.title}>
-          {TITLE.map((word) => (
-            <span className="splash-word" key={word} aria-hidden="true">
-              {[...word].map((ch) => (
-                <b key={letter} style={{ '--i': letter++ } as React.CSSProperties}>
-                  {ch}
-                </b>
-              ))}
-            </span>
-          ))}
+        <h1 className="splash-title">
+          <span className="sr-only">{EVENT.title}</span>
+          <SplashLogo />
         </h1>
         <p className="splash-sub">{EVENT.subtitle}</p>
 

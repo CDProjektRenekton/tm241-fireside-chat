@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { ABeeZee, Anton, Pinyon_Script } from 'next/font/google';
 import { EVENT, venueFull } from '@/lib/config';
 import './globals.css';
+import './splash-logo.css';
 
 // Display: tall condensed headline type from the pubmat. Body: ABeeZee (branding kit).
 // Accent: a formal script standing in for the branding kit's Sloop Script Pro.
