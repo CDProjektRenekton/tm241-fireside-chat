@@ -376,7 +376,6 @@ export default function RegistrationForm() {
               name="sex"
               number={2}
               label="Sex"
-              hint="Used only for group totals in event reports."
               required
               segmented
               options={SEX_OPTIONS}
