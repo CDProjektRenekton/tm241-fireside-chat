@@ -1,10 +1,14 @@
 // Generated from "Fireside chat - Logo.png" (lettering traced to vector shapes, sparkle redrawn).
 // Animations live in app/splash-logo.css: "splash" plays the Liftoff intro, "hero" (the
-// registration page) only bursts its star and sweeps a light across it now and then.
+// registration page) only bursts its star and sweeps a light across it now and then, and "pass"
+// (the boarding pass) is still. The email uses PNG renders of it (public/email/logo.png, hero.jpg).
+
+const ID_PREFIX = { splash: 'sl-', hero: 'hl-', pass: 'pl-' } as const;
 
 /** "Leading from the Start" logo. Decorative: put the title in text beside it (e.g. sr-only). */
-export default function EventLogo({ variant }: { variant: 'splash' | 'hero' }) {
-  const id = variant === 'splash' ? 'sl-' : 'hl-';
+export default function EventLogo({ variant }: { variant: keyof typeof ID_PREFIX }) {
+  // Each copy has its own ids, so several can be on the page at once (splash, hero, pass).
+  const id = ID_PREFIX[variant];
   const splash = variant === 'splash';
   return (
     <svg className={`${variant}-logo`} viewBox="0 0 1620 800" aria-hidden="true" focusable="false">
@@ -104,9 +108,11 @@ export default function EventLogo({ variant }: { variant: 'splash' | 'hero' }) {
         </g>
       </g>
 
-      <g mask={`url(#${id}type)`}>
-        <rect className="sl-shine" x="-420" y="0" width="300" height="800" fill={`url(#${id}shine)`} />
-      </g>
+      {variant !== 'pass' && (
+        <g mask={`url(#${id}type)`}>
+          <rect className="sl-shine" x="-420" y="0" width="300" height="800" fill={`url(#${id}shine)`} />
+        </g>
+      )}
 
       {splash && (
         <>

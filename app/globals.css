@@ -2347,13 +2347,17 @@ a {
   color: transparent;
 }
 
+/* the event logo (components/EventLogo.tsx, still) */
 .pass-title {
-  margin: 2px 0 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: 24px;
-  line-height: 1;
-  text-transform: uppercase;
+  margin: 8px 0 0;
+  line-height: 0;
+}
+
+.pass-logo {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  overflow: visible;
 }
 
 .pass-passenger {
@@ -3529,6 +3533,9 @@ a {
   .pass {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    /* the pass keeps its dark background on paper, so keep its light text too (the page's
+       print text colour is dark navy) */
+    color: var(--ink);
     animation: none !important;
     max-width: 720px;
     margin: 0 auto;

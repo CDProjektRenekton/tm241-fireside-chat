@@ -17,7 +17,7 @@ export interface TicketEmailData {
   question?: string;
 }
 
-export const EMAIL_IMAGES = ['hero', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'] as const;
+export const EMAIL_IMAGES = ['hero', 'logo', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'] as const;
 export type EmailImage = (typeof EMAIL_IMAGES)[number];
 
 export interface RenderOptions {
@@ -145,7 +145,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
       </td></tr>
       <tr><td class="pass-px" style="padding:20px 22px 6px;font-family:${BODY};">
         <div style="font-family:${DISPLAY};font-size:14px;line-height:16px;letter-spacing:1px;text-transform:uppercase;color:${C.mint};">${esc(EVENT.series)}</div>
-        <div style="font-family:${DISPLAY};font-size:24px;line-height:26px;text-transform:uppercase;color:${C.ink};padding-top:2px;">${esc(EVENT.title)}</div>
+        <div style="padding-top:8px;"><img src="${o.src('logo')}" width="260" height="128" alt="${esc(EVENT.title)}" style="display:block;width:260px;max-width:100%;height:auto;border:0;font-family:${DISPLAY};font-size:24px;line-height:26px;text-transform:uppercase;color:${C.ink};"></div>
         <div style="padding-top:18px;">${label('Passenger')}</div>
         <div class="pass-name" style="font-family:${DISPLAY};font-size:30px;line-height:32px;letter-spacing:.3px;text-transform:uppercase;color:${C.ink};padding-top:3px;word-break:break-word;">${name}</div>
         <div style="padding-top:6px;font-size:14px;line-height:22px;color:${C.ink3};word-break:break-word;">

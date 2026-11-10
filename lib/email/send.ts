@@ -84,6 +84,8 @@ export function siteUrl(req?: Request) {
 
 const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> = {
   hero: { file: 'hero.jpg', type: 'image/jpeg' },
+  /** The event logo (transparent, 2x) for the boarding pass title; rendered from components/EventLogo.tsx. */
+  logo: { file: 'logo.png', type: 'image/png' },
   'icon-calendar': { file: 'icon-calendar.png', type: 'image/png' },
   'icon-clock': { file: 'icon-clock.png', type: 'image/png' },
   'icon-pin': { file: 'icon-pin.png', type: 'image/png' },

@@ -6,6 +6,7 @@ import { EVENT } from '@/lib/config';
 import { buildInvite, inviteFileName } from '@/lib/ics';
 import type { RegistrationInput } from '@/lib/types';
 import { ticketPayload } from '@/lib/ticket';
+import EventLogo from '../EventLogo';
 import { Check, Copy, Sparkle } from '../Icons';
 import TicketQR from '../TicketQR';
 
@@ -59,7 +60,10 @@ export function MissionPass({ data, refNo }: PassProps) {
         {refNo && <span className="pass-stamp">Cleared for liftoff</span>}
         <div className="pass-body">
           <p className="pass-kicker">{EVENT.series}</p>
-          <h3 className="pass-title">{EVENT.title}</h3>
+          <h3 className="pass-title">
+            <span className="sr-only">{EVENT.title}</span>
+            <EventLogo variant="pass" />
+          </h3>
           <div className="pass-passenger">
             <span className="pass-label">Passenger</span>
             <strong className="pass-name">{data.name || 'Your name'}</strong>
