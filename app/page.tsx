@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Countdown from '@/components/Countdown';
+import EventLogo from '@/components/EventLogo';
 import RegistrationForm from '@/components/form/RegistrationForm';
 import { Calendar, Clock, MapPin } from '@/components/Icons';
 import SpaceBackground from '@/components/SpaceBackground';
@@ -28,8 +29,8 @@ export default function Home() {
               <span>{EVENT.series}</span>
             </p>
             <h1 className="hero-title" id="event-title">
-              <span>Leading from</span>
-              <span>the Start</span>
+              <span className="sr-only">{EVENT.title}</span>
+              <EventLogo variant="hero" />
             </h1>
             <p className="hero-sub">{EVENT.subtitle}</p>
             <p className="hero-blurb">{EVENT.blurb}</p>

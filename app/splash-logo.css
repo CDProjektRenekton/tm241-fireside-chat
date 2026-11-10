@@ -30,13 +30,10 @@
   fill-rule: evenodd;
 }
 
-.sl-ch,
+/* the chevron's gradient is set on the element itself (each logo has its own gradient id) */
+.sl-ch:not(.sl-chevron),
 .sl-swoosh {
   fill: #fff;
-}
-
-.sl-ch.sl-chevron {
-  fill: url(#sl-chev);
 }
 
 .sl-draw {
@@ -65,133 +62,159 @@
   transform-origin: 1466px 91px;
 }
 
+/* On the registration page (hero): the logo rises in with the page, then its star bursts and a
+   light sweep crosses it every 9 s. Held while the splash is up (see .hero-logo in globals.css). */
+.hero-logo {
+  display: block;
+  width: min(100%, 560px);
+  height: auto;
+  overflow: visible;
+}
+
+.hero-logo .sl-spark {
+  animation:
+    sl-burst 850ms linear 0.9s both,
+    sl-twinkle 1500ms ease-in-out 1.75s infinite alternate none;
+}
+
+.hero-logo .sl-shine {
+  animation: sl-hero-shine 9s linear 1.1s infinite;
+}
+
+@keyframes sl-hero-shine {
+  0% { transform: skewX(-20deg) translateX(0); opacity: 0; animation-timing-function: cubic-bezier(0.45, 0, 0.35, 1); }
+  0.5% { opacity: 1; }
+  12% { transform: skewX(-20deg) translateX(2400px); opacity: 1; }
+  12.01%, 100% { transform: skewX(-20deg) translateX(2400px); opacity: 0; }
+}
+
 /* 1 · the chevron (the A of START) lifts off on its exhaust; a ring marks the landing */
-.sl-chevron {
+.splash-logo .sl-chevron {
   animation:
     sl-rise calc(900ms * var(--sl-s)) linear calc((150ms + var(--sl-o)) * var(--sl-s)) both,
     sl-show calc(900ms * var(--sl-s)) linear calc((150ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-glow {
+.splash-logo .sl-glow {
   animation:
     sl-rise calc(900ms * var(--sl-s)) linear calc((150ms + var(--sl-o)) * var(--sl-s)) both,
     sl-glow-fade calc(1300ms * var(--sl-s)) linear calc((150ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-exhaust {
+.splash-logo .sl-exhaust {
   animation: sl-exhaust calc(1150ms * var(--sl-s)) linear calc((150ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-ring {
+.splash-logo .sl-ring {
   animation: sl-ring calc(800ms * var(--sl-s)) cubic-bezier(0.15, 0.7, 0.3, 1) calc((900ms + var(--sl-o)) * var(--sl-s)) forwards;
 }
 
 /* 2 · S T R T pop up from the baseline, nearest the rocket first */
-.sl-start .sl-ch:not(.sl-chevron) {
+.splash-logo .sl-start .sl-ch:not(.sl-chevron) {
   transform-origin: 50% 100%;
 }
 
-.sl-start > :nth-child(1) {
+.splash-logo .sl-start > :nth-child(1) {
   animation: sl-pop calc(640ms * var(--sl-s)) linear calc((980ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-start > :nth-child(2) {
+.splash-logo .sl-start > :nth-child(2) {
   animation: sl-pop calc(640ms * var(--sl-s)) linear calc((870ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-start > :nth-child(4) {
+.splash-logo .sl-start > :nth-child(4) {
   animation: sl-pop calc(640ms * var(--sl-s)) linear calc((870ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-start > :nth-child(5) {
+.splash-logo .sl-start > :nth-child(5) {
   animation: sl-pop calc(640ms * var(--sl-s)) linear calc((980ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
 /* 3 · LEADING streaks in from the left; FROM THE glides in after it */
 
-.sl-lead > :nth-child(1) {
+.splash-logo .sl-lead > :nth-child(1) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1000ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(2) {
+.splash-logo .sl-lead > :nth-child(2) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1060ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(3) {
+.splash-logo .sl-lead > :nth-child(3) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1120ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(4) {
+.splash-logo .sl-lead > :nth-child(4) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1180ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(5) {
+.splash-logo .sl-lead > :nth-child(5) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1240ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(6) {
+.splash-logo .sl-lead > :nth-child(6) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1300ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-lead > :nth-child(7) {
+.splash-logo .sl-lead > :nth-child(7) {
   animation: sl-streak calc(760ms * var(--sl-s)) linear calc((1360ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(1) {
+.splash-logo .sl-from > :nth-child(1) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1520ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(2) {
+.splash-logo .sl-from > :nth-child(2) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1565ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(3) {
+.splash-logo .sl-from > :nth-child(3) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1610ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(4) {
+.splash-logo .sl-from > :nth-child(4) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1655ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(5) {
+.splash-logo .sl-from > :nth-child(5) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1700ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(6) {
+.splash-logo .sl-from > :nth-child(6) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1745ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-from > :nth-child(7) {
+.splash-logo .sl-from > :nth-child(7) {
   animation: sl-glide calc(520ms * var(--sl-s)) cubic-bezier(0.2, 0.8, 0.2, 1) calc((1790ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
 /* 4 · a comet draws the orbit swoosh and lights the star as it passes */
-.sl-draw {
+.splash-logo .sl-draw {
   animation: sl-draw calc(1150ms * var(--sl-s)) cubic-bezier(0.5, 0, 0.3, 1) calc((1650ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-comet {
+.splash-logo .sl-comet {
   animation:
     sl-comet calc(1150ms * var(--sl-s)) linear calc((1650ms + var(--sl-o)) * var(--sl-s)) both,
     sl-comet-fade calc(1150ms * var(--sl-s)) linear calc((1650ms + var(--sl-o)) * var(--sl-s)) both;
 }
 
-.sl-spark {
+.splash-logo .sl-spark {
   animation:
     sl-burst calc(850ms * var(--sl-s)) linear calc((2291ms + var(--sl-o)) * var(--sl-s)) both,
     sl-twinkle calc(1500ms * var(--sl-s)) ease-in-out calc((3191ms + var(--sl-o)) * var(--sl-s)) infinite alternate none;
 }
 
-.sl-bloom {
+.splash-logo .sl-bloom {
   animation: sl-bloom calc(800ms * var(--sl-s)) linear calc((2291ms + var(--sl-o)) * var(--sl-s)) forwards;
 }
 
 /* 5 · a light sweep across the lettering (left out of the short replay) */
-.sl-shine {
+.splash-logo .sl-shine {
   animation: sl-shine calc(1100ms * var(--sl-s)) cubic-bezier(0.45, 0, 0.35, 1) calc((2750ms + var(--sl-o)) * var(--sl-s)) none;
 }
 
-.splash.is-quick .sl-shine {
+.splash.is-quick .splash-logo .sl-shine {
   animation: none;
 }
 

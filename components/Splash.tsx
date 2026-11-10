@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EVENT } from '@/lib/config';
 import GradientCanvas from './GradientCanvas';
-import SplashLogo from './SplashLogo';
+import EventLogo from './EventLogo';
 import { SPLASH_NEBULA } from './nebula';
 
 const SHOW_MS = 5200;
@@ -240,7 +240,7 @@ export default function Splash() {
         </p>
         <h1 className="splash-title">
           <span className="sr-only">{EVENT.title}</span>
-          <SplashLogo />
+          <EventLogo variant="splash" />
         </h1>
         <p className="splash-sub">{EVENT.subtitle}</p>
 

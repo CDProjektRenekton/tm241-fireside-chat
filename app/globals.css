@@ -661,23 +661,16 @@ a {
   color: transparent;
 }
 
+/* the "Leading from the Start" logo (components/EventLogo.tsx, styles in app/splash-logo.css) */
 .hero-title {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(58px, 6.6vw, 104px);
-  line-height: 0.9;
-  letter-spacing: 0.005em;
-  text-transform: uppercase;
-  color: #fff;
-  text-shadow:
-    -1px 0 rgba(94, 182, 211, 0.55),
-    1px 0 rgba(232, 71, 90, 0.5),
-    0 10px 40px rgba(3, 0, 32, 0.6);
+  width: 100%;
+  margin: 4px 0 0;
+  line-height: 0;
 }
 
-.hero-title span {
-  display: block;
+/* its star burst and light sweep wait for the splash too */
+.splash:not(.is-leaving) ~ .page .hero-logo * {
+  animation-play-state: paused;
 }
 
 .hero-sub {
@@ -3273,8 +3266,8 @@ a {
     align-items: center;
   }
 
-  .hero-title {
-    font-size: clamp(54px, 13vw, 104px);
+  .hero-logo {
+    margin-inline: auto;
   }
 
   .hero-sub,
