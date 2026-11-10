@@ -581,20 +581,23 @@ a {
 }
 
 /* Small print on the sky: white with a light shadow (--halo), as are the organizer line,
-   countdown label and footer line. */
+   countdown label and footer line. Two centred lines: university, then centre. The left
+   padding matches the letter-spacing trailing the last letter, so each line sits truly centred. */
 .topbar-org {
   margin: 0;
+  padding-left: 0.18em;
   font-family: var(--mono);
   font-size: 11.5px;
+  line-height: 1.75;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  text-align: center;
   color: #fff;
   text-shadow: var(--halo);
 }
 
 .topbar-org span {
-  color: var(--coral-400);
-  margin: 0 4px;
+  display: block;
 }
 
 .stage {
@@ -3364,6 +3367,7 @@ a {
   }
 
   .topbar-org {
+    padding-left: 0.12em;
     font-size: 9.5px;
     letter-spacing: 0.12em;
   }

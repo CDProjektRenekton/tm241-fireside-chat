@@ -19,7 +19,8 @@ export default function Home() {
             <Image src="/tmc-logo.png" alt="UP Technology Management Center" width={400} height={400} priority className="logo" />
           </div>
           <p className="topbar-org">
-            University of the Philippines Diliman <span aria-hidden="true">·</span> Technology Management Center
+            <span>University of the Philippines Diliman</span>
+            <span>Technology Management Center</span>
           </p>
         </header>
 
