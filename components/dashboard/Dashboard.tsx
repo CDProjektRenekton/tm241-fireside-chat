@@ -35,6 +35,7 @@ import {
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import QuestionWall from './QuestionWall';
 import ResponsesTable from './ResponsesTable';
+import RoleDetailsCard from './RoleDetailsCard';
 
 interface Payload {
   records: Registration[];
@@ -465,6 +466,8 @@ export default function Dashboard() {
                   </p>
                 )}
               </article>
+
+              <RoleDetailsCard byRole={stats.byRole} filterAffiliation={filters.affiliation} />
 
               <article className="card">
                 <header className="card-head">

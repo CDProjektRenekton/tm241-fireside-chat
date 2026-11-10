@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TOPIC_SHORT, type Topic } from '@/lib/config';
+import { detailText, questionsFor } from '@/lib/roles';
 import { affiliationLabel, duplicateKey, formatDateTime } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
 import { Alert, Check, ChevronDown, Mail, Message, X } from '../Icons';
@@ -236,6 +237,12 @@ export default function ResponsesTable({
                 <dt>Current affiliation</dt>
                 <dd>{affiliationLabel(selected) || '—'}</dd>
               </div>
+              {questionsFor(selected.affiliation).map((q) => (
+                <div key={q.key}>
+                  <dt>{q.label}</dt>
+                  <dd>{detailText(selected, q) || <span className="muted">Not asked (registered earlier)</span>}</dd>
+                </div>
+              ))}
               <div className="span-2">
                 <dt>Topics of interest</dt>
                 <dd>

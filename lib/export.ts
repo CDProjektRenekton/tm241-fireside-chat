@@ -1,10 +1,24 @@
 import 'server-only';
 import ExcelJS from 'exceljs';
 import { EVENT, TOPIC_SHORT, type Topic, venueFull } from './config';
+import { F_DETAIL } from './fields';
+import { DETAIL_KEYS, type DetailKey, detailText, isOtherKey, questionsFor } from './roles';
 import { affiliationLabel, computeStats, duplicateKey, findDuplicates, formatDateTime, topicsLabel } from './stats';
 import type { Registration } from './types';
 
 type Row = Record<string, string | number>;
+
+/** Follow-up answer columns ("Other: …" is folded into its question's column). */
+const DETAIL_COLUMNS = DETAIL_KEYS.filter((k) => !isOtherKey(k));
+
+function detailCells(r: Registration): Row {
+  const out: Row = Object.fromEntries(DETAIL_COLUMNS.map((k) => [F_DETAIL[k], '']));
+  for (const q of questionsFor(r.affiliation)) {
+    if (!r[q.key]) continue;
+    out[F_DETAIL[q.key as DetailKey]] = q.kind === 'years' ? Number(r.years) : detailText(r, q);
+  }
+  return out;
+}
 
 const REG_HEADERS = [
   'Reference No.',
@@ -15,6 +29,7 @@ const REG_HEADERS = [
   'Email',
   'University/Organization',
   'Current Affiliation',
+  ...DETAIL_COLUMNS.map((k) => F_DETAIL[k]),
   'Topics of Interest',
   'Question for the Speaker',
   'Hopes to Learn',
@@ -35,6 +50,7 @@ function registrationRows(rows: Registration[]): Row[] {
     Email: r.email,
     'University/Organization': r.organization,
     'Current Affiliation': affiliationLabel(r),
+    ...detailCells(r),
     'Topics of Interest': topicsLabel(r).join('; '),
     'Question for the Speaker': r.question,
     'Hopes to Learn': r.hopes,
@@ -241,6 +257,17 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     ['Affiliation', 'Registrants', 'Share'],
     stats.byAffiliation.map((a) => [a.label, a.count, share(a.count, stats.total)]),
   );
+  for (const b of stats.byRole) {
+    if (b.total === b.notAsked) continue;
+    for (const q of b.questions) {
+      const body: (string | number)[][] = q.items
+        .filter((i) => q.kind !== 'text' || i.count > 0)
+        .map((i) => [i.examples?.length ? `${i.label} (${i.examples.join(', ')})` : i.label, i.count, share(i.count, q.answered)]);
+      if (q.median !== undefined) body.push(['Median', `${q.median} ${q.median === 1 ? 'year' : 'years'}`, '']);
+      if (b.notAsked) body.push(['Not asked (registered before the question was added)', b.notAsked, '']);
+      section(`${b.affiliation} · ${q.label}`, [q.label, 'Registrants', 'Share'], body);
+    }
+  }
   section(
     'Topics of interest (check all that apply)',
     ['Topic', 'Registrants', 'Share'],
@@ -261,6 +288,7 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     Email: 30,
     'University/Organization': 32,
     'Current Affiliation': 24,
+    ...Object.fromEntries(DETAIL_COLUMNS.map((k) => [F_DETAIL[k], k === 'years' ? 14 : 24])),
     'Topics of Interest': 48,
     'Question for the Speaker': 52,
     'Hopes to Learn': 52,

@@ -1,5 +1,6 @@
 // Shared by the form (instant feedback) and /api/submit (the authority).
 import { AFFILIATIONS, AGE_GROUPS, SEXES, TOPICS } from './config';
+import { EMPTY_DETAILS, questionsFor, YEARS_MAX } from './roles';
 import type { FieldErrors, RegistrationInput } from './types';
 
 export const MSG = {
@@ -9,6 +10,8 @@ export const MSG = {
   other: 'Please tell us what “Other” means for you.',
   consent: 'Your consent is required to complete the registration.',
   tooLong: 'This answer is too long.',
+  specify: 'Please specify.',
+  years: `Please enter a whole number of years, from 0 to ${YEARS_MAX}.`,
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -56,7 +59,25 @@ export function validateStep1(d: RegistrationInput): FieldErrors {
     if (!d.affiliationOther) e.affiliationOther = MSG.other;
     else if (d.affiliationOther.length > LIMITS.short) e.affiliationOther = MSG.tooLong;
   }
+  validateDetails(e, d);
   return e;
+}
+
+/** The chosen affiliation's follow-up questions — all required. */
+function validateDetails(e: FieldErrors, d: RegistrationInput) {
+  for (const q of questionsFor(d.affiliation)) {
+    const v = d[q.key];
+    if (q.kind === 'text') text(e, q.key, v);
+    else if (q.kind === 'years') {
+      if (!v) e[q.key] = MSG.required;
+      else if (!/^\d{1,2}$/.test(v) || Number(v) > YEARS_MAX) e[q.key] = MSG.years;
+    } else if (!q.options?.includes(v)) e[q.key] = MSG.choose;
+    else if (q.otherKey && v === 'Other') {
+      const other = d[q.otherKey];
+      if (!other) e[q.otherKey] = MSG.specify;
+      else if (other.length > LIMITS.short) e[q.otherKey] = MSG.tooLong;
+    }
+  }
 }
 
 /** Step 2 — Audience engagement (all optional, but "Other" needs a description). */
@@ -98,7 +119,18 @@ export function normalizeInput(body: unknown): RegistrationInput {
     ? [...new Set(b.topics.slice(0, TOPICS.length + 2).map((t) => clean(t)))].filter(Boolean)
     : [];
   const affiliation = clean(b.affiliation) as RegistrationInput['affiliation'];
+  // Keep only the chosen affiliation's follow-up answers.
+  const details = { ...EMPTY_DETAILS };
+  for (const q of questionsFor(affiliation)) {
+    const raw = b[q.key];
+    details[q.key] =
+      q.kind === 'years'
+        ? (typeof raw === 'number' ? String(raw) : clean(raw, 4)).replace(/^0+(?=\d)/, '')
+        : clean(raw);
+    if (q.otherKey && details[q.key] === 'Other') details[q.otherKey] = clean(b[q.otherKey]);
+  }
   return {
+    ...details,
     name: clean(b.name, LIMITS.name),
     sex: clean(b.sex) as RegistrationInput['sex'],
     ageGroup: clean(b.ageGroup) as RegistrationInput['ageGroup'],

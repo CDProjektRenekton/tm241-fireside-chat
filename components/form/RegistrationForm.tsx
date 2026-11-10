@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AFFILIATIONS, AGE_GROUPS, EVENT, SEXES, TOPICS } from '@/lib/config';
+import { EMPTY_DETAILS } from '@/lib/roles';
 import type { FieldErrors, RegistrationInput } from '@/lib/types';
 import { LIMITS, STEP_VALIDATORS, stepOf, validateAll } from '@/lib/validation';
 import {
@@ -30,6 +31,7 @@ import {
 import CardSweep from '../CardSweep';
 import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from './Fields';
 import { CopyRef, downloadInvite, Liftoff, MissionPass } from './MissionPass';
+import RoleDetails from './RoleDetails';
 
 const DRAFT_KEY = 'tm241-fc-draft-v1';
 
@@ -41,6 +43,7 @@ const initialData = (): RegistrationInput => ({
   organization: '',
   affiliation: '',
   affiliationOther: '',
+  ...EMPTY_DETAILS,
   topics: [],
   topicsOther: '',
   question: '',
@@ -139,6 +142,14 @@ export default function RegistrationForm() {
     if (!cache[key]) cache[key] = ((v: RegistrationInput[K]) => setData((d) => ({ ...d, [key]: v }))) as (v: never) => void;
     return cache[key] as unknown as (v: RegistrationInput[K]) => void;
   };
+
+  // Picking another affiliation clears the follow-up answers, so (say) a faculty member's years of
+  // teaching never carry over as a researcher's years in research.
+  const pickAffiliation = useRef((v: string) =>
+    setData((d) =>
+      d.affiliation === v ? d : { ...d, ...EMPTY_DETAILS, affiliation: v as RegistrationInput['affiliation'] },
+    ),
+  ).current;
 
   const scrollToCard = () => {
     const el = cardRef.current;
@@ -428,7 +439,7 @@ export default function RegistrationForm() {
               className="cards-affiliation"
               options={AFFILIATION_OPTIONS}
               value={data.affiliation}
-              onChange={set('affiliation') as (v: string) => void}
+              onChange={pickAffiliation}
               error={errors.affiliation}
             >
               {data.affiliation === 'Other' && (
@@ -446,6 +457,17 @@ export default function RegistrationForm() {
                 </div>
               )}
             </CardChoice>
+            {data.affiliation && (
+              <RoleDetails
+                key={data.affiliation}
+                affiliation={data.affiliation}
+                icon={AFFILIATION_ICONS[data.affiliation]}
+                number={6}
+                data={data}
+                errors={errors}
+                set={set}
+              />
+            )}
           </div>
         )}
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { memo, useState, type ReactNode } from 'react';
-import { Alert, Check } from '../Icons';
+import { YEARS_MAX } from '@/lib/roles';
+import { Alert, Check, ChevronDown, Minus, Plus } from '../Icons';
 
 export const fieldId = (key: string) => `f-${key.replace(/\./g, '-')}`;
 
@@ -10,13 +11,16 @@ interface LabelProps {
   hint?: string;
   required?: boolean;
   optional?: boolean;
-  number?: number;
+  /** Question number: 6 shows as "06"; a string ("06.1") shows as is. */
+  number?: number | string;
 }
 
 export function LabelText({ label, required, optional, number }: LabelProps) {
   return (
     <span className="label-text">
-      {number !== undefined && <span className="q-num">{String(number).padStart(2, '0')}</span>}
+      {number !== undefined && (
+        <span className="q-num">{typeof number === 'string' ? number : String(number).padStart(2, '0')}</span>
+      )}
       <span>
         {label}
         {required && (
@@ -204,6 +208,8 @@ interface PillChoiceProps extends LabelProps {
   error?: string;
   /** Equal-width segments in one row, for a few short options (e.g. Female / Male / Prefer not to say). */
   segmented?: boolean;
+  /** Shown under the pills, e.g. a "Please specify" box when "Other" is picked. */
+  children?: ReactNode;
 }
 
 /** Single-choice pills (radio group) — compact, for short answer lists such as age ranges. */
@@ -229,7 +235,9 @@ function PillChoiceImpl(p: PillChoiceProps) {
             {p.hint}
           </p>
         )}
-        <div className={`chips chips-pills${p.segmented ? ' chips-seg' : ''}`}>
+        <div
+          className={`chips chips-pills${p.segmented ? ' chips-seg' : p.options.some((o) => o.label.length > 20) ? ' chips-long' : ''}`}
+        >
           {p.options.map((o) => {
             const checked = p.value === o.value;
             return (
@@ -251,6 +259,145 @@ function PillChoiceImpl(p: PillChoiceProps) {
             );
           })}
         </div>
+        {p.children}
+      </div>
+      <FieldError id={id} error={p.error} />
+    </div>
+  );
+}
+
+interface SelectFieldProps extends LabelProps {
+  name: string;
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (v: string) => void;
+  error?: string;
+  placeholder?: string;
+  children?: ReactNode;
+}
+
+/** Dropdown, for longer single-choice lists (sectors, industries). */
+function SelectFieldImpl(p: SelectFieldProps) {
+  const id = fieldId(p.name);
+  const describedBy = [p.hint && `${id}-hint`, p.error && `${id}-err`].filter(Boolean).join(' ') || undefined;
+  return (
+    <div className={`field${p.error ? ' has-error' : ''}${p.value ? ' is-filled' : ''}`}>
+      <label htmlFor={id} className="label">
+        <LabelText {...p} />
+      </label>
+      {p.hint && (
+        <p className="field-hint" id={`${id}-hint`}>
+          {p.hint}
+        </p>
+      )}
+      <div className={`control control-select${p.value ? '' : ' is-empty'}`}>
+        <select
+          id={id}
+          name={p.name}
+          value={p.value}
+          required={p.required}
+          aria-invalid={p.error ? true : undefined}
+          aria-describedby={describedBy}
+          onChange={(e) => p.onChange(e.target.value)}
+        >
+          <option value="" disabled>
+            {p.placeholder ?? 'Choose one'}
+          </option>
+          {p.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <span className="select-chevron" aria-hidden="true">
+          <ChevronDown width={18} height={18} />
+        </span>
+        <span className="control-glow" aria-hidden="true" />
+      </div>
+      {p.children}
+      <FieldError id={id} error={p.error} />
+    </div>
+  );
+}
+
+interface YearsFieldProps extends LabelProps {
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+}
+
+/** Whole number of years: type it, or use − / + (or the arrow keys). Starts empty, not at 0. */
+function YearsFieldImpl(p: YearsFieldProps) {
+  const id = fieldId(p.name);
+  const n = p.value === '' ? null : Number(p.value);
+  const describedBy = [p.hint && `${id}-hint`, p.error && `${id}-err`].filter(Boolean).join(' ') || undefined;
+  // From empty, + gives 1 and − gives 0.
+  const step = (d: 1 | -1) => p.onChange(String(Math.min(YEARS_MAX, Math.max(0, (n ?? (d > 0 ? 0 : 1)) + d))));
+  return (
+    <div className={`field${p.error ? ' has-error' : ''}${p.value ? ' is-filled' : ''}`}>
+      <label htmlFor={id} className="label">
+        <LabelText {...p} />
+      </label>
+      {p.hint && (
+        <p className="field-hint" id={`${id}-hint`}>
+          {p.hint}
+        </p>
+      )}
+      <div className="stepper">
+        <button
+          type="button"
+          className="stepper-btn"
+          aria-label="One year less"
+          aria-controls={id}
+          tabIndex={-1}
+          disabled={n === 0}
+          onClick={() => step(-1)}
+        >
+          <Minus width={18} height={18} />
+        </button>
+        <div className="control stepper-control">
+          <input
+            id={id}
+            name={p.name}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
+            maxLength={2}
+            placeholder="–"
+            required={p.required}
+            role="spinbutton"
+            aria-valuemin={0}
+            aria-valuemax={YEARS_MAX}
+            aria-valuenow={n ?? undefined}
+            aria-invalid={p.error ? true : undefined}
+            aria-describedby={describedBy}
+            value={p.value}
+            onChange={(e) => p.onChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                step(e.key === 'ArrowUp' ? 1 : -1);
+              }
+            }}
+          />
+          <span className="control-glow" aria-hidden="true" />
+        </div>
+        <button
+          type="button"
+          className="stepper-btn"
+          aria-label="One year more"
+          aria-controls={id}
+          tabIndex={-1}
+          disabled={n !== null && n >= YEARS_MAX}
+          onClick={() => step(1)}
+        >
+          <Plus width={18} height={18} />
+        </button>
+        <span className="stepper-unit" aria-hidden="true">
+          {n === 1 ? 'year' : 'years'}
+        </span>
       </div>
       <FieldError id={id} error={p.error} />
     </div>
@@ -319,4 +466,6 @@ function ChipChoiceImpl(p: ChipChoiceProps) {
 export const TextField = memo(TextFieldImpl);
 export const CardChoice = memo(CardChoiceImpl);
 export const PillChoice = memo(PillChoiceImpl);
+export const SelectField = memo(SelectFieldImpl);
+export const YearsField = memo(YearsFieldImpl);
 export const ChipChoice = memo(ChipChoiceImpl);

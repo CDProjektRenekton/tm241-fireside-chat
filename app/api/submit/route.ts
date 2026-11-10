@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { AirtableError, ConfigError, createRegistration } from '@/lib/airtable';
 import { EVENT } from '@/lib/config';
 import { queueTicketEmail } from '@/lib/email/send';
-import { F } from '@/lib/fields';
+import { F, F_DETAIL } from '@/lib/fields';
+import { DETAIL_KEYS } from '@/lib/roles';
 import { REF_ALPHABET, REF_CODE_LENGTH } from '@/lib/ticket';
 import { normalizeInput, validateAll } from '@/lib/validation';
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   const ref = makeRef();
-  const fields: Record<string, string | string[]> = {
+  const fields: Record<string, string | string[] | number> = {
     [F.ref]: ref,
     [F.submittedAt]: new Date().toISOString(),
     [F.name]: input.name,
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
     [F.organization]: input.organization,
     [F.affiliation]: input.affiliation,
     [F.affiliationOther]: input.affiliationOther,
+    ...Object.fromEntries(DETAIL_KEYS.map((k) => [F_DETAIL[k], k === 'years' && input.years ? Number(input.years) : input[k]])),
     [F.topics]: input.topics,
     [F.topicsOther]: input.topicsOther,
     [F.question]: input.question,

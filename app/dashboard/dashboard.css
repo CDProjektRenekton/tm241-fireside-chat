@@ -594,6 +594,20 @@ a.head-btn {
   color: var(--ink-3);
 }
 
+.sub-meta {
+  color: var(--ink-2);
+}
+
+.role-tabs {
+  display: flex;
+  margin-bottom: 18px;
+  border-radius: 18px;
+}
+
+.role-tabpanel .demo-grid {
+  row-gap: 26px;
+}
+
 .demo-note {
   margin: 14px 0 0;
   font-size: 12.5px;

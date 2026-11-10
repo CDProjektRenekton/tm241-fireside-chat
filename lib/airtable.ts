@@ -1,5 +1,6 @@
 import 'server-only';
-import { F, FIELD_SPECS } from './fields';
+import { F, F_DETAIL, FIELD_SPECS } from './fields';
+import { DETAIL_KEYS, type RoleDetails } from './roles';
 import type { Registration, SchemaStatus } from './types';
 
 const API = 'https://api.airtable.com/v0';
@@ -250,6 +251,7 @@ function toRegistration(r: AirtableRecord): Registration {
     organization: str(f[F.organization]),
     affiliation: str(f[F.affiliation]),
     affiliationOther: str(f[F.affiliationOther]),
+    ...(Object.fromEntries(DETAIL_KEYS.map((k) => [k, str(f[F_DETAIL[k]])])) as RoleDetails),
     topics: list(f[F.topics]),
     topicsOther: str(f[F.topicsOther]),
     question: str(f[F.question]),

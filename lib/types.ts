@@ -1,7 +1,11 @@
 import type { Affiliation, AgeGroup, Sex } from './config';
+import type { RoleDetails } from './roles';
 
-/** What the browser sends to /api/submit. */
-export interface RegistrationInput {
+/**
+ * What the browser sends to /api/submit. The follow-up answers (RoleDetails) are filled in only
+ * for the registrant's own affiliation; the rest stay empty.
+ */
+export interface RegistrationInput extends RoleDetails {
   name: string;
   sex: Sex | '';
   ageGroup: AgeGroup | '';
@@ -18,8 +22,11 @@ export interface RegistrationInput {
   website?: string;
 }
 
-/** A registration as read back from Airtable for the dashboard. */
-export interface Registration {
+/**
+ * A registration as read back from Airtable for the dashboard. Follow-up answers (RoleDetails)
+ * are empty for registrations made before those questions were added; Years is a number as text.
+ */
+export interface Registration extends RoleDetails {
   id: string;
   ref: string;
   submittedAt: string;

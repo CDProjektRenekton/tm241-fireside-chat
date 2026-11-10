@@ -1,6 +1,7 @@
 // Filtering and summary statistics shared by the dashboard and the export endpoint,
 // so the numbers on screen always match the downloaded file.
-import { AFFILIATIONS, AGE_GROUPS, SEXES, STUDENT_AFFILIATIONS, TOPICS } from './config';
+import { type Affiliation, AFFILIATIONS, AGE_GROUPS, SEXES, STUDENT_AFFILIATIONS, TOPICS } from './config';
+import { type DetailKey, type DetailKind, DETAIL_KEYS, ROLE_QUESTIONS, YEAR_RANGES, yearRange } from './roles';
 import type { Registration } from './types';
 
 export type RangeKey = 'all' | 'today' | '7d' | '30d';
@@ -103,6 +104,7 @@ export function applyFilters(rows: Registration[], f: Filters, now = new Date())
     if (since && dayKey(r.submittedAt) < since) return false;
     if (q) {
       const hay = [r.ref, r.name, r.email, r.organization, affiliationLabel(r), r.question, r.hopes, r.topicsOther]
+        .concat(DETAIL_KEYS.filter((k) => k !== 'years').map((k) => r[k]))
         .join(' ')
         .toLowerCase();
       if (!hay.includes(q)) return false;
@@ -148,6 +150,86 @@ export interface Stats {
   byOrganization: { label: string; count: number }[];
   daily: { day: string; count: number }[];
   duplicates: number;
+  /** Follow-up answers, one entry per affiliation that has follow-up questions. */
+  byRole: RoleBreakdown[];
+}
+
+export interface RoleQuestionStats {
+  key: DetailKey;
+  label: string;
+  kind: DetailKind;
+  /** Choices in the form's order; free text grouped and sorted by count; years in ranges. */
+  items: { label: string; count: number; examples?: string[] }[];
+  /** Registrants who answered this question. */
+  answered: number;
+  /** Years questions only. */
+  median?: number;
+}
+
+export interface RoleBreakdown {
+  affiliation: Affiliation;
+  total: number;
+  /** Registered before the follow-up questions were added, so they have no answers. */
+  notAsked: number;
+  questions: RoleQuestionStats[];
+}
+
+function median(nums: number[]) {
+  if (!nums.length) return undefined;
+  const s = [...nums].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : Math.round(((s[m - 1] + s[m]) / 2) * 10) / 10;
+}
+
+/** Counts free-text answers, grouping spelling variants ("BS ECE", "bs ece"). */
+function textCounts(values: string[]) {
+  const groups = new Map<string, { labels: Map<string, number>; count: number }>();
+  for (const v of values) {
+    const k = orgKey(v);
+    const g = groups.get(k) ?? { labels: new Map(), count: 0 };
+    g.count += 1;
+    g.labels.set(v, (g.labels.get(v) ?? 0) + 1);
+    groups.set(k, g);
+  }
+  return [...groups.values()]
+    .map((g) => ({ label: [...g.labels].sort((a, b) => b[1] - a[1])[0][0], count: g.count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+export function roleBreakdowns(rows: Registration[]): RoleBreakdown[] {
+  return AFFILIATIONS.filter((a) => ROLE_QUESTIONS[a].length).map((affiliation) => {
+    const qs = ROLE_QUESTIONS[affiliation];
+    const group = rows.filter((r) => r.affiliation === affiliation);
+    const asked = group.filter((r) => qs.some((q) => r[q.key]));
+    const questions = qs.map((q): RoleQuestionStats => {
+      const base = { key: q.key, label: q.label, kind: q.kind };
+      const values = asked.map((r) => r[q.key]).filter(Boolean);
+      if (q.kind === 'years') {
+        const nums = values.map(Number).filter((n) => Number.isFinite(n) && n >= 0);
+        return {
+          ...base,
+          answered: nums.length,
+          median: median(nums),
+          items: YEAR_RANGES.map((label) => ({ label, count: nums.filter((n) => yearRange(n) === label).length })),
+        };
+      }
+      if (q.kind === 'text') return { ...base, answered: values.length, items: textCounts(values) };
+      const options = q.options ?? [];
+      const items: RoleQuestionStats['items'] = options.map((o) => ({ label: o, count: values.filter((v) => v === o).length }));
+      // A value typed into Airtable by hand counts as "Other".
+      const stray = values.filter((v) => !options.includes(v)).length;
+      const other = items.find((i) => i.label === 'Other');
+      if (other) {
+        other.count += stray;
+        if (q.otherKey) {
+          const typed = asked.filter((r) => r[q.key] === 'Other').map((r) => r[q.otherKey!]).filter(Boolean);
+          other.examples = textCounts(typed).map((t) => t.label);
+        }
+      }
+      return { ...base, answered: values.length, items };
+    });
+    return { affiliation, total: group.length, notAsked: group.length - asked.length, questions };
+  });
 }
 
 export function computeStats(rows: Registration[], now = new Date()): Stats {
@@ -205,6 +287,7 @@ export function computeStats(rows: Registration[], now = new Date()): Stats {
     byOrganization,
     daily,
     duplicates: rows.filter((r) => dupKeys.has(duplicateKey(r))).length,
+    byRole: roleBreakdowns(rows),
   };
 }
 
