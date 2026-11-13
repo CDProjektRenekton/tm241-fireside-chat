@@ -63,7 +63,7 @@ export default function Home() {
             <Countdown />
 
             <p className="hero-organizer">
-              Organized by <b>TM241 Class</b> · UP Diliman Technology Management Center
+              Organized by <b>UP Diliman Technology Management Center</b>
             </p>
           </section>
 
@@ -72,7 +72,7 @@ export default function Home() {
 
         <footer className="page-foot">
           <p className="foot-tagline">{EVENT.tagline}</p>
-          <p>TM241 Class · Technology Management Center · University of the Philippines Diliman</p>
+          <p>Technology Management Center · University of the Philippines Diliman</p>
         </footer>
       </main>
     </>

@@ -166,7 +166,7 @@ async function fetchImage(origin: string, path: string) {
 
 export async function buildWorkbook(rows: Registration[], filterLabel: string, origin: string) {
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'TM241 Class · UP Diliman Technology Management Center';
+  wb.creator = EVENT.organizer;
   wb.created = new Date();
   const stats = computeStats(rows);
 

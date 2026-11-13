@@ -194,7 +194,7 @@ export default function Splash() {
       onClick={skip}
       role="status"
       aria-live="polite"
-      aria-label="Loading the TM241 Fireside Chat registration form"
+      aria-label={`Loading the ${EVENT.series} registration form`}
     >
       <div className="splash-nebula">
         {SPLASH_NEBULA.map((n) => (

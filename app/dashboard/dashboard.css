@@ -1495,7 +1495,7 @@ a.head-btn {
     margin: 14mm 13mm 16mm;
 
     @bottom-left {
-      content: 'TM241 Fireside Chat · Registration report';
+      content: 'Fireside Chat · Registration report';
       font: 7.5pt system-ui, sans-serif;
       color: #5a6385;
     }

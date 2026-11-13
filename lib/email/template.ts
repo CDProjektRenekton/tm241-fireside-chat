@@ -122,7 +122,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
 
   <!-- header artwork -->
   <tr><td style="padding:0;background:${C.card};border-radius:24px 24px 0 0;" bgcolor="${C.card}">
-    <img src="${o.src('hero')}" width="600" alt="TM241 Fireside Chat: Leading from the Start. Registered. Friday, 27 November 2026, 1:30 to 3:30 PM, SURP, UP Diliman. See you there!" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
+    <img src="${o.src('hero')}" width="600" alt="Fireside Chat: Leading from the Start. Registered. Friday, 27 November 2026, 1:30 to 3:30 PM, SURP, UP Diliman. See you there!" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
   </td></tr>
 
   <!-- greeting -->

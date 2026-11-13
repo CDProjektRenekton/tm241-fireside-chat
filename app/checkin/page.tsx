@@ -7,7 +7,7 @@ import '../dashboard/dashboard.css';
 import './checkin.css';
 
 export const metadata: Metadata = {
-  title: 'Check-in desk · TM241 Fireside Chat',
+  title: 'Check-in desk · Fireside Chat',
   robots: { index: false, follow: false },
 };
 

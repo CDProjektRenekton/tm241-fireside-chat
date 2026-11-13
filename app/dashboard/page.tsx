@@ -6,7 +6,7 @@ import { dashboardConfigured, isAuthenticated } from '@/lib/auth';
 import './dashboard.css';
 
 export const metadata: Metadata = {
-  title: 'Dashboard · TM241 Fireside Chat',
+  title: 'Dashboard · Fireside Chat',
   robots: { index: false, follow: false },
 };
 

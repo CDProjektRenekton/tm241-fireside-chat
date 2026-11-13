@@ -2,7 +2,7 @@
 // and the "Leading from the Start" publication materials.
 
 export const EVENT = {
-  series: 'TM241 Fireside Chat',
+  series: 'Fireside Chat',
   title: 'Leading from the Start',
   subtitle: 'Lessons in Building Strategic Technology Capabilities for National Development',
   weekday: 'Friday',
@@ -14,7 +14,7 @@ export const EVENT = {
   endsAt: '2026-11-27T15:30:00+08:00',
   venue: 'School of Urban and Regional Planning',
   venueCampus: 'University of the Philippines Diliman, Quezon City',
-  organizer: 'TM241 Class · UP Diliman Technology Management Center',
+  organizer: 'UP Diliman Technology Management Center',
   tagline: 'Leading Innovation. Shaping the Nation’s Future.',
   blurb:
     'Join us for an engaging conversation about leadership, institutional development, technology acquisition, and the future of Philippine innovation.',
