@@ -560,7 +560,7 @@ export default function RegistrationForm() {
                 </div>
               </div>
               <p className="consent-body">
-                The TM241 class of the UP Diliman Technology Management Center collects the information in this form only
+                The {EVENT.organizer} collects the information in this form only
                 for the {EVENT.series}. It is kept confidential, shared only with the event organizers, and is not used for
                 any other purpose.
               </p>
