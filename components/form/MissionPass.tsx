@@ -83,7 +83,9 @@ export function MissionPass({ data, refNo }: PassProps) {
             </div>
             <div className="pass-gate">
               <dt>Gate</dt>
-              <dd>SURP · UP Diliman</dd>
+              <dd>
+                {EVENT.venue} · <span>UP Diliman</span>
+              </dd>
             </div>
           </dl>
         </div>

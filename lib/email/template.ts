@@ -122,7 +122,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
 
   <!-- header artwork -->
   <tr><td style="padding:0;background:${C.card};border-radius:24px 24px 0 0;" bgcolor="${C.card}">
-    <img src="${o.src('hero')}" width="600" alt="Fireside Chat: Leading from the Start. Registered. Friday, 27 November 2026, 1:30 to 3:30 PM, SURP, UP Diliman. See you there!" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
+    <img src="${o.src('hero')}" width="600" alt="Fireside Chat: Leading from the Start. Registered. Friday, 27 November 2026, 1:30 to 3:30 PM, ${esc(EVENT.venue)}, UP Diliman. See you there!" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
   </td></tr>
 
   <!-- greeting -->
@@ -154,9 +154,10 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
       </td></tr>
       <tr><td class="pass-px" style="padding:14px 22px 18px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${C.line};"><tr>
-          <td class="meta-td" valign="top" width="31%" style="padding-top:14px;">${label('Date')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(EVENT.dateShort)}</div></td>
-          <td class="meta-td" valign="top" width="27%" style="padding-top:14px;">${label('Boarding')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(startTime)}</div></td>
-          <td class="meta-td" valign="top" style="padding-top:14px;">${label('Gate')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};">SURP &middot; UP Diliman</div></td>
+          <td class="meta-td" valign="top" width="50%" style="padding-top:14px;">${label('Date')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(EVENT.dateShort)}</div></td>
+          <td class="meta-td" valign="top" width="50%" style="padding-top:14px;">${label('Boarding')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(startTime)}</div></td>
+        </tr><tr>
+          <td class="meta-td" valign="top" colspan="2" style="padding-top:12px;">${label('Gate')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};">${esc(EVENT.venue)} &middot; <span style="white-space:nowrap;">UP Diliman</span></div></td>
         </tr></table>
       </td></tr>
       <!-- tear line -->

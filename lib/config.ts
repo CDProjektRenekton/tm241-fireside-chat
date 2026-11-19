@@ -12,7 +12,9 @@ export const EVENT = {
   /** Philippine time (UTC+8). Used by the countdown and the calendar invite. */
   startsAt: '2026-11-27T13:30:00+08:00',
   endsAt: '2026-11-27T15:30:00+08:00',
-  venue: 'School of Urban and Regional Planning',
+  venue: 'School of Urban and Regional Planning Training Hall',
+  /** The building alone, for the map search. */
+  venueBuilding: 'School of Urban and Regional Planning',
   venueCampus: 'University of the Philippines Diliman, Quezon City',
   organizer: 'UP Diliman Technology Management Center',
   tagline: 'Leading Innovation. Shaping the Nation’s Future.',

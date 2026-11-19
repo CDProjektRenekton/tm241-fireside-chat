@@ -2,7 +2,7 @@
 
 Registration form and results dashboard for the **TM241 Fireside Chat: Leading from the Start —
 Lessons in Building Strategic Technology Capabilities for National Development**
-(Friday, November 27, 2026 · 1:30–3:30 PM · School of Urban and Regional Planning, UP Diliman),
+(Friday, November 27, 2026 · 1:30–3:30 PM · School of Urban and Regional Planning Training Hall, UP Diliman),
 organized by the TM241 class of the UP Diliman Technology Management Center.
 
 - **`/`** — galaxy-themed splash screen (hyperspace star field, orbiting UP and TMC seals, the title

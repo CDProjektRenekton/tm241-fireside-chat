@@ -54,4 +54,4 @@ export function googleCalendarUrl(siteUrl: string) {
 }
 
 export const mapsUrl = () =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${EVENT.venue}, UP Diliman, Quezon City`)}`;
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${EVENT.venueBuilding}, UP Diliman, Quezon City`)}`;

@@ -2496,6 +2496,21 @@ a {
   white-space: nowrap;
 }
 
+/* The venue is spelled out in full, so the gate takes its own row under Date and Boarding
+   and may wrap; "UP Diliman" stays together. */
+.pass-meta .pass-gate {
+  grid-column: 1 / -1;
+}
+
+.pass-meta .pass-gate dd {
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.pass-meta .pass-gate dd span {
+  white-space: nowrap;
+}
+
 .pass-stub {
   position: relative;
   display: flex;
@@ -3478,10 +3493,6 @@ a {
 
   .pass-meta {
     grid-template-columns: auto auto;
-  }
-
-  .pass-meta .pass-gate {
-    grid-column: 1 / -1;
   }
 
   .pass-name {
