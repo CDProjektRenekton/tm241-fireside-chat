@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Countdown from '@/components/Countdown';
 import EventLogo from '@/components/EventLogo';
 import RegistrationForm from '@/components/form/RegistrationForm';
-import { Calendar, Clock, MapPin } from '@/components/Icons';
+import { Calendar, Clock, MapPin, ZoomLogo } from '@/components/Icons';
 import SpaceBackground from '@/components/SpaceBackground';
 import Splash from '@/components/Splash';
 import { EVENT } from '@/lib/config';
@@ -55,7 +55,14 @@ export default function Home() {
                 <MapPin />
                 <span>
                   <b>{EVENT.venue}</b>
-                  <small>UP Diliman, Quezon City · or online via Zoom</small>
+                  <small>UP Diliman, Quezon City</small>
+                </span>
+              </li>
+              <li className="chip-zoom">
+                <ZoomLogo size={30} />
+                <span>
+                  <b>Online via Zoom</b>
+                  <small>Join live from anywhere</small>
                 </span>
               </li>
             </ul>

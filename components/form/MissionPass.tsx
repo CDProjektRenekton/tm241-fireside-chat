@@ -7,7 +7,7 @@ import { buildInvite, inviteFileName } from '@/lib/ics';
 import type { RegistrationInput } from '@/lib/types';
 import { ticketPayload } from '@/lib/ticket';
 import EventLogo from '../EventLogo';
-import { Check, Copy, External, Sparkle, Video } from '../Icons';
+import { Check, Copy, External, Sparkle, ZoomLogo } from '../Icons';
 import TicketQR from '../TicketQR';
 
 export function affiliationText(d: Pick<RegistrationInput, 'affiliation' | 'affiliationOther'>) {
@@ -60,7 +60,7 @@ function CopyLink({ value }: { value: string }) {
         }
       }}
     >
-      {copied ? <Check width={14} height={14} /> : <Copy width={14} height={14} />}
+      {copied ? <Check width={16} height={16} /> : <ZoomLogo size={16} />}
       {copied ? 'Link copied' : 'Copy Zoom link'}
     </button>
   );
@@ -71,7 +71,7 @@ function ZoomStub({ refNo, joinUrl }: { refNo?: string; joinUrl?: string | null 
   if (!refNo) {
     return (
       <span className="pass-qr is-pending pass-zoom-pending">
-        <Video width={22} height={22} />
+        <ZoomLogo size={30} />
         Zoom link appears after you register
       </span>
     );
@@ -79,17 +79,15 @@ function ZoomStub({ refNo, joinUrl }: { refNo?: string; joinUrl?: string | null 
   if (!joinUrl) {
     return (
       <span className="pass-qr is-pending pass-zoom-pending">
-        <Video width={22} height={22} />
+        <ZoomLogo size={30} />
         Your Zoom link will be sent by email before the event
       </span>
     );
   }
   return (
     <div className="pass-zoom">
-      <span className="pass-zoom-badge" aria-hidden="true">
-        <Video width={28} height={28} />
-      </span>
       <a className="btn btn-primary pass-zoom-btn" href={joinUrl} target="_blank" rel="noopener noreferrer">
+        <ZoomLogo size={24} />
         Join on Zoom
         <External width={16} height={16} />
       </a>

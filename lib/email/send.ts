@@ -94,6 +94,8 @@ const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> =
   'icon-pin': { file: 'icon-pin.png', type: 'image/png' },
   'icon-scan': { file: 'icon-scan.png', type: 'image/png' },
   'icon-video': { file: 'icon-video.png', type: 'image/png' },
+  /** The Zoom app logo (2x), inside the Join on Zoom button. */
+  zoom: { file: 'zoom.png', type: 'image/png' },
 };
 const art = new Map<string, Buffer>();
 

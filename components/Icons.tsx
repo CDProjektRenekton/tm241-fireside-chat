@@ -287,6 +287,11 @@ export const Video = (p: P) => (
     <path d="M15.5 10.5 21.5 7v10l-6-3.5" />
   </svg>
 );
+/** The Zoom app logo (public/zoom-logo.webp), for anything that leads to the Zoom meeting. Decorative: the text beside it says "Zoom". */
+export const ZoomLogo = ({ size = 38, className = '' }: { size?: number; className?: string }) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img className={`zoom-logo ${className}`.trim()} src="/zoom-logo.webp" alt="" width={size} height={size} />
+);
 /** Arrow out of a box: opens in a new tab. */
 export const External = (p: P) => (
   <svg {...base(p)}>

@@ -31,16 +31,17 @@ export const EMAIL_IMAGES = [
   'icon-pin',
   'icon-scan',
   'icon-video',
+  'zoom',
 ] as const;
 export type EmailImage = (typeof EMAIL_IMAGES)[number];
 
 export const isOnline = (d: Pick<TicketEmailData, 'attendanceMode'>) => d.attendanceMode === 'Online';
 
 /** The images one email uses (and attaches): the QR code and directions onsite, the Zoom art online. */
-export function emailImagesFor(d: Pick<TicketEmailData, 'attendanceMode'>): EmailImage[] {
-  return isOnline(d)
-    ? ['hero-online', 'logo', 'icon-calendar', 'icon-clock', 'icon-video']
-    : ['hero', 'logo', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'];
+export function emailImagesFor(d: Pick<TicketEmailData, 'attendanceMode' | 'joinUrl'>): EmailImage[] {
+  if (!isOnline(d)) return ['hero', 'logo', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'];
+  // the Zoom logo sits in the Join on Zoom button, so only when there is a link to join
+  return ['hero-online', 'logo', 'icon-calendar', 'icon-clock', 'icon-video', ...(d.joinUrl ? (['zoom'] as const) : [])];
 }
 
 export interface RenderOptions {
@@ -116,10 +117,9 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
 
   /** Where the QR code goes on an onsite pass: the Zoom button, or a note while there is no link. */
   const zoomStub = joinUrl
-    ? `<img src="${o.src('icon-video')}" width="56" height="56" alt="" style="display:block;margin:0 auto;width:56px;height:56px;border:0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:14px auto 0;"><tr>
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:4px auto 0;"><tr>
           <td align="center" bgcolor="${C.mint}" style="border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});">
-            <a href="${zoomHref}" target="_blank" style="display:inline-block;padding:15px 34px;border-radius:999px;font-family:${BODY};font-size:17px;line-height:20px;font-weight:bold;color:#050122;text-decoration:none;">Join on Zoom &rarr;</a>
+            <a href="${zoomHref}" target="_blank" style="display:inline-block;padding:12px 30px 12px 14px;border-radius:999px;font-family:${BODY};font-size:17px;line-height:28px;font-weight:bold;color:#050122;text-decoration:none;white-space:nowrap;"><img src="${o.src('zoom')}" width="28" height="28" alt="Zoom" style="display:inline-block;width:28px;height:28px;border:0;vertical-align:middle;margin:0 10px 0 0;"><span style="vertical-align:middle;">Join on Zoom &rarr;</span></a>
           </td>
         </tr></table>
         <div style="padding-top:12px;font-family:${MONO};font-size:11px;line-height:16px;letter-spacing:1.5px;text-transform:uppercase;color:${C.ink3};">Opens ${esc(EVENT.weekday)} ${esc(EVENT.dateShort)} &middot; ${esc(startTime)}</div>

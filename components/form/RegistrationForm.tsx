@@ -28,7 +28,7 @@ import {
   Rocket,
   Shield,
   User,
-  Video,
+  ZoomLogo,
 } from '../Icons';
 import CardSweep from '../CardSweep';
 import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from './Fields';
@@ -77,7 +77,7 @@ const AFFILIATION_OPTIONS = AFFILIATIONS.map((a) => ({ value: a, label: a, icon:
 const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
 const MODE_OPTIONS = [
   { value: 'Onsite', label: 'Onsite', sub: 'In person at UP Diliman', icon: <MapPin /> },
-  { value: 'Online', label: 'Online', sub: 'Live on Zoom', icon: <Video /> },
+  { value: 'Online', label: 'Online', sub: 'Live on Zoom', icon: <ZoomLogo /> },
 ];
 const CONSENT_OPTIONS = [
   { value: 'Yes', label: 'Yes', sub: 'I give my consent', icon: <Check /> },
@@ -500,7 +500,6 @@ export default function RegistrationForm() {
               name="attendanceMode"
               number={7}
               label="How will you join?"
-              hint="Online participants get a Zoom link instead of a QR code."
               required
               className="cards-mode"
               options={MODE_OPTIONS}
