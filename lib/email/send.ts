@@ -7,8 +7,9 @@ import type { SendMailOptions, Transporter } from 'nodemailer';
 import { EVENT } from '../config';
 import { buildInvite, inviteFileName } from '../ics';
 import type { Registration } from '../types';
+import { zoomJoinUrl } from '../zoom';
 import { qrPng } from './qr-png';
-import { EMAIL_IMAGES, renderTicketEmail, type EmailImage, type TicketEmailData } from './template';
+import { emailImagesFor, isOnline, renderTicketEmail, type EmailImage, type TicketEmailData } from './template';
 
 /**
  * The confirmation email goes out through any SMTP mail account. Gmail is the default:
@@ -84,18 +85,23 @@ export function siteUrl(req?: Request) {
 
 const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> = {
   hero: { file: 'hero.jpg', type: 'image/jpeg' },
+  /** The same header art for online registrants: "Online · Live on Zoom" and "See you online". */
+  'hero-online': { file: 'hero-online.jpg', type: 'image/jpeg' },
   /** The event logo (transparent, 2x) for the boarding pass title; rendered from components/EventLogo.tsx. */
   logo: { file: 'logo.png', type: 'image/png' },
   'icon-calendar': { file: 'icon-calendar.png', type: 'image/png' },
   'icon-clock': { file: 'icon-clock.png', type: 'image/png' },
   'icon-pin': { file: 'icon-pin.png', type: 'image/png' },
   'icon-scan': { file: 'icon-scan.png', type: 'image/png' },
+  'icon-video': { file: 'icon-video.png', type: 'image/png' },
 };
 const art = new Map<string, Buffer>();
 
-async function images(ref: string) {
+/** The images this email uses — only those are attached. */
+async function images(d: TicketEmailData) {
   const out = {} as Record<EmailImage, { content: Buffer; type: string; file: string }>;
-  for (const name of EMAIL_IMAGES) {
+  const ref = d.ref;
+  for (const name of emailImagesFor(d)) {
     if (name === 'qr') {
       out.qr = { content: qrPng(ref), type: 'image/png', file: `${ref}.png` };
       continue;
@@ -115,7 +121,10 @@ const cid = (name: EmailImage) => `${name}@tm241-fireside-chat`;
 
 // ---------------------------------------------------------------- sending
 
-export function ticketDataFrom(r: Pick<Registration, 'ref' | 'name' | 'email' | 'organization' | 'affiliation' | 'affiliationOther' | 'question'>): TicketEmailData {
+export function ticketDataFrom(
+  r: Pick<Registration, 'ref' | 'name' | 'email' | 'organization' | 'affiliation' | 'affiliationOther' | 'question' | 'attendanceMode'>,
+): TicketEmailData {
+  const online = r.attendanceMode === 'Online';
   return {
     ref: r.ref,
     name: r.name,
@@ -123,6 +132,8 @@ export function ticketDataFrom(r: Pick<Registration, 'ref' | 'name' | 'email' | 
     organization: r.organization,
     affiliation: r.affiliation === 'Other' ? r.affiliationOther || 'Other' : r.affiliation,
     question: r.question,
+    attendanceMode: online ? 'Online' : 'Onsite',
+    joinUrl: online ? zoomJoinUrl() : null,
   };
 }
 
@@ -130,7 +141,7 @@ export function ticketDataFrom(r: Pick<Registration, 'ref' | 'name' | 'email' | 
 export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?: string }) {
   const s = settings();
   if (!emailConfigured()) throw new EmailNotConfigured();
-  const img = await images(d.ref);
+  const img = await images(d);
   const { subject, html, text } = renderTicketEmail(d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` });
   const message: SendMailOptions = {
     from: s.from,
@@ -140,7 +151,7 @@ export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: strin
     html,
     text,
     attachments: [
-      ...EMAIL_IMAGES.map((n) => ({
+      ...emailImagesFor(d).map((n) => ({
         filename: img[n].file,
         content: img[n].content,
         contentType: img[n].type,
@@ -149,7 +160,13 @@ export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: strin
       })),
       {
         filename: inviteFileName(d.ref),
-        content: buildInvite({ ref: d.ref, name: d.name, organization: d.organization }),
+        content: buildInvite({
+          ref: d.ref,
+          name: d.name,
+          organization: d.organization,
+          online: isOnline(d),
+          joinUrl: d.joinUrl,
+        }),
         contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
       },
     ],
@@ -185,7 +202,7 @@ export function queueTicketEmail(d: TicketEmailData, req: Request) {
 
 /** HTML for the dashboard's preview: same email, with the images inlined. */
 export async function previewTicketEmail(d: TicketEmailData, url: string) {
-  const img = await images(d.ref);
+  const img = await images(d);
   return renderTicketEmail(d, {
     siteUrl: url,
     src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,

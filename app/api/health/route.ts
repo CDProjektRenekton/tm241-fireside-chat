@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectionStatus } from '@/lib/airtable';
 import { dashboardConfigured, deskPasswordSet } from '@/lib/auth';
 import { emailStatus } from '@/lib/email/send';
+import { zoomStatus } from '@/lib/zoom';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,8 @@ export async function GET() {
       },
       // Optional: without it, registrants get their boarding pass on screen only, not by email.
       email: emailStatus(),
+      // Optional: without it, online registrants are told the Zoom link will come by email.
+      zoom: zoomStatus(),
     },
     { status: ok ? 200 : 503, headers: { 'Cache-Control': 'no-store' } },
   );

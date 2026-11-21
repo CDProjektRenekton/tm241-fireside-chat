@@ -144,6 +144,9 @@ function ResultCard({
               {r.affiliation && <em>{r.affiliation}</em>}
             </p>
             <p className="result-ref mono">{r.ref}</p>
+            {r.attendanceMode === 'Online' && (
+              <p className="result-online">Registered to join online (Zoom) — fine to check them in if they came in person.</p>
+            )}
           </>
         )}
         <p className="result-note">{c.note}</p>

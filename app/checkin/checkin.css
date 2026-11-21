@@ -595,6 +595,12 @@
   color: var(--cyan-100);
 }
 
+.result-online {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #c9d0ff;
+}
+
 .result-note {
   margin: 8px 0 0;
   font-size: 14px;

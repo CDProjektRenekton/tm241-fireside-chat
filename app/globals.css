@@ -2569,6 +2569,93 @@ a {
   color: var(--coral-400);
 }
 
+/* Online pass: the Zoom button sits where the QR code would be */
+.pass-zoom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 2px 0;
+}
+
+.pass-zoom-badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: var(--cyan-100);
+  background: radial-gradient(circle at 30% 25%, #1b2a74, #0d1140 70%);
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 182, 211, 0.55),
+    0 12px 28px -14px rgba(94, 182, 211, 0.75);
+}
+
+.pass-zoom-btn.btn {
+  width: 100%;
+  min-height: 0;
+  padding: 11px 16px;
+  font-size: 14.5px;
+  white-space: nowrap;
+}
+
+.pass-zoom-when {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* "Opens 1:30 PM" over "Fri 27 Nov 2026" in the narrow stub */
+.pass-zoom-when > span {
+  display: block;
+}
+
+.pass-zoom-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--cyan-200);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.pass-zoom-copy:hover {
+  color: #fff;
+}
+
+.pass-zoom-copy:focus-visible {
+  outline: 2px solid var(--cyan-300);
+  outline-offset: 2px;
+}
+
+.pass-zoom-pending {
+  gap: 8px;
+  color: var(--ink-2);
+}
+
+.pass-zoom-pending svg {
+  color: var(--cyan-100);
+}
+
+.pass.is-online .pass-admit {
+  color: var(--mint);
+}
+
+.print-only {
+  display: none;
+}
+
 /* sits on the main part, never over the QR code */
 .pass-stamp {
   --rot: -9deg;
@@ -3483,12 +3570,59 @@ a {
     grid-area: admit;
   }
 
+  /* online: the Zoom button runs the full width of the stub, under the reference */
+  .pass.is-online .pass-stub {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'label'
+      'ref'
+      'code'
+      'admit';
+  }
+
+  .pass-zoom {
+    grid-area: code;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 12px;
+    margin: 8px 0 4px;
+  }
+
+  .pass-zoom-badge {
+    display: none;
+  }
+
+  .pass-zoom-btn.btn {
+    width: auto;
+  }
+
+  /* wide stub on phones: one line */
+  .pass-zoom-when > span {
+    display: inline;
+  }
+
+  .pass-zoom-when > span + span::before {
+    content: '· ';
+  }
+
+  .pass.is-online .pass-qr.is-pending {
+    width: 100%;
+    height: auto;
+    margin: 8px 0 4px;
+  }
+
   .pass-stamp {
     --rot: -14deg;
     top: auto;
     bottom: 14px;
     right: 14px;
     font-size: 10.5px;
+  }
+
+  /* room under the gate for the stamp, so it never covers the (now longer) gate line */
+  .pass.is-issued .pass-body {
+    padding-bottom: 62px;
   }
 
   .pass-meta {
@@ -3505,7 +3639,8 @@ a {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .cards-consent {
+  .cards-consent,
+  .cards-mode {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3612,6 +3747,23 @@ a {
 
   .pass-stamp {
     animation: none;
+  }
+
+  .pass-zoom-copy {
+    display: none;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .pass-zoom-url {
+    max-width: 100%;
+    font-family: var(--mono);
+    font-size: 8.5pt;
+    line-height: 1.35;
+    color: var(--cyan-100);
+    word-break: break-all;
   }
 }
 

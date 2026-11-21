@@ -15,10 +15,33 @@ export interface TicketEmailData {
   /** Already resolved: "Other" replaced by what the person typed. */
   affiliation: string;
   question?: string;
+  /** "Online" gets the Zoom button instead of the QR code; anything else is onsite. */
+  attendanceMode?: string;
+  /** The Zoom link (online only); null when it isn't set on the server yet. */
+  joinUrl?: string | null;
 }
 
-export const EMAIL_IMAGES = ['hero', 'logo', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'] as const;
+export const EMAIL_IMAGES = [
+  'hero',
+  'hero-online',
+  'logo',
+  'qr',
+  'icon-calendar',
+  'icon-clock',
+  'icon-pin',
+  'icon-scan',
+  'icon-video',
+] as const;
 export type EmailImage = (typeof EMAIL_IMAGES)[number];
+
+export const isOnline = (d: Pick<TicketEmailData, 'attendanceMode'>) => d.attendanceMode === 'Online';
+
+/** The images one email uses (and attaches): the QR code and directions onsite, the Zoom art online. */
+export function emailImagesFor(d: Pick<TicketEmailData, 'attendanceMode'>): EmailImage[] {
+  return isOnline(d)
+    ? ['hero-online', 'logo', 'icon-calendar', 'icon-clock', 'icon-video']
+    : ['hero', 'logo', 'qr', 'icon-calendar', 'icon-clock', 'icon-pin', 'icon-scan'];
+}
 
 export interface RenderOptions {
   /** Public address of the site, for links. */
@@ -83,7 +106,27 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
   const site = esc(o.siteUrl);
   const siteLabel = esc(o.siteUrl.replace(/^https?:\/\//, ''));
   const startTime = EVENT.time.split(' – ')[0];
-  const preheader = `You're registered for ${EVENT.title} — ${EVENT.weekday}, ${EVENT.dateShort}, ${startTime} at the ${EVENT.venue}, UP Diliman. Show the QR code inside at the door.`;
+  const online = isOnline(d);
+  const joinUrl = online && d.joinUrl ? d.joinUrl : '';
+  const zoomHref = esc(joinUrl);
+  const preheader = online
+    ? `You're registered for ${EVENT.title} — ${EVENT.weekday}, ${EVENT.dateShort}, ${startTime}, online via Zoom. ${joinUrl ? 'Your Join on Zoom button is inside.' : 'We’ll email you the Zoom link before the event.'}`
+    : `You're registered for ${EVENT.title} — ${EVENT.weekday}, ${EVENT.dateShort}, ${startTime} at the ${EVENT.venue}, UP Diliman. Show the QR code inside at the door.`;
+  const calendarUrl = googleCalendarUrl(o.siteUrl, online, joinUrl || null);
+
+  /** Where the QR code goes on an onsite pass: the Zoom button, or a note while there is no link. */
+  const zoomStub = joinUrl
+    ? `<img src="${o.src('icon-video')}" width="56" height="56" alt="" style="display:block;margin:0 auto;width:56px;height:56px;border:0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:14px auto 0;"><tr>
+          <td align="center" bgcolor="${C.mint}" style="border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});">
+            <a href="${zoomHref}" target="_blank" style="display:inline-block;padding:15px 34px;border-radius:999px;font-family:${BODY};font-size:17px;line-height:20px;font-weight:bold;color:#050122;text-decoration:none;">Join on Zoom &rarr;</a>
+          </td>
+        </tr></table>
+        <div style="padding-top:12px;font-family:${MONO};font-size:11px;line-height:16px;letter-spacing:1.5px;text-transform:uppercase;color:${C.ink3};">Opens ${esc(EVENT.weekday)} ${esc(EVENT.dateShort)} &middot; ${esc(startTime)}</div>
+        <div style="padding-top:10px;font-size:12px;line-height:18px;color:${C.muted};word-break:break-all;">Button not working? Open this link:<br><a href="${zoomHref}" target="_blank" style="color:${C.cyan2};text-decoration:underline;">${zoomHref}</a></div>`
+    : `<img src="${o.src('icon-video')}" width="56" height="56" alt="" style="display:block;margin:0 auto;width:56px;height:56px;border:0;">
+        <div style="padding-top:12px;font-size:15px;line-height:22px;color:${C.ink2};">You&rsquo;re joining online.</div>
+        <div style="padding-top:4px;font-size:13px;line-height:19px;color:${C.muted};">We&rsquo;ll email you the Zoom link before the event.</div>`;
 
   const html = `<!doctype html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -122,7 +165,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
 
   <!-- header artwork -->
   <tr><td style="padding:0;background:${C.card};border-radius:24px 24px 0 0;" bgcolor="${C.card}">
-    <img src="${o.src('hero')}" width="600" alt="Fireside Chat: Leading from the Start. Registered. Friday, 27 November 2026, 1:30 to 3:30 PM, ${esc(EVENT.venue)}, UP Diliman. See you there!" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
+    <img src="${o.src(online ? 'hero-online' : 'hero')}" width="600" alt="${esc(EVENT.series)}: ${esc(EVENT.title)}. Registered. ${esc(EVENT.weekday)}, ${esc(EVENT.dateEn)}, ${esc(EVENT.time)}, ${online ? 'online via Zoom. See you online!' : `${esc(EVENT.venue)}, UP Diliman. See you there!`}" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:24px 24px 0 0;color:${C.ink2};font-family:${BODY};font-size:16px;">
   </td></tr>
 
   <!-- greeting -->
@@ -130,7 +173,15 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
     <div style="font-size:16px;line-height:24px;color:${C.cyan2};">Hi ${hi},</div>
     <h1 class="h1" style="margin:6px 0 0;font-family:${DISPLAY};font-weight:400;font-size:36px;line-height:38px;letter-spacing:.5px;text-transform:uppercase;color:${C.ink};">You&rsquo;re cleared for liftoff!</h1>
     <p style="margin:14px 0 0;font-size:16px;line-height:25px;color:${C.ink2};">
-      Your seat at the <b style="color:${C.ink};">${esc(EVENT.series)}</b> is confirmed. Below is your boarding pass &mdash; show its QR code at the registration desk on the day, on your phone or printed.
+      ${
+        online
+          ? `Your seat at the <b style="color:${C.ink};">${esc(EVENT.series)}</b> is confirmed &mdash; you&rsquo;re joining online. ${
+              joinUrl
+                ? 'Your boarding pass below has the <b style="color:' + C.ink + ';">Join on Zoom</b> button; use it on the day, a few minutes before the start.'
+                : 'We&rsquo;ll email you the Zoom link before the event.'
+            }`
+          : `Your seat at the <b style="color:${C.ink};">${esc(EVENT.series)}</b> is confirmed. Below is your boarding pass &mdash; show its QR code at the registration desk on the day, on your phone or printed.`
+      }
     </p>
   </td></tr>
 
@@ -140,7 +191,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
       <tr><td class="pass-px" style="padding:13px 22px;border-radius:20px 20px 0 0;background:#1a2a66;background-image:linear-gradient(90deg,#1c3f7c,#36205a);border-bottom:1px dashed #3d5590;" bgcolor="#1a2a66">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td style="font-family:${MONO};font-size:11px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:${C.ink2};">&#10022;&nbsp; Boarding pass</td>
-          <td align="right" style="font-family:${DISPLAY};font-size:14px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:${C.coral};">Admit one</td>
+          <td align="right" style="font-family:${DISPLAY};font-size:14px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:${online ? C.mint : C.coral};">${online ? 'Joining online' : 'Admit one'}</td>
         </tr></table>
       </td></tr>
       <tr><td class="pass-px" style="padding:20px 22px 6px;font-family:${BODY};">
@@ -157,7 +208,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
           <td class="meta-td" valign="top" width="50%" style="padding-top:14px;">${label('Date')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(EVENT.dateShort)}</div></td>
           <td class="meta-td" valign="top" width="50%" style="padding-top:14px;">${label('Boarding')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};white-space:nowrap;">${esc(startTime)}</div></td>
         </tr><tr>
-          <td class="meta-td" valign="top" colspan="2" style="padding-top:12px;">${label('Gate')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};">${esc(EVENT.venue)} &middot; <span style="white-space:nowrap;">UP Diliman</span></div></td>
+          <td class="meta-td" valign="top" colspan="2" style="padding-top:12px;">${label('Gate')}<div style="font-family:${DISPLAY};font-size:17px;line-height:22px;letter-spacing:.6px;text-transform:uppercase;color:${C.ink};">${online ? 'Online &middot; <span style="white-space:nowrap;">Live on Zoom</span>' : `${esc(EVENT.venue)} &middot; <span style="white-space:nowrap;">UP Diliman</span>`}</div></td>
         </tr></table>
       </td></tr>
       <!-- tear line -->
@@ -170,18 +221,26 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
       </td></tr>
       <!-- stub -->
       <tr><td align="center" style="padding:16px 22px 26px;font-family:${BODY};">
-        <img src="${o.src('qr')}" width="200" height="200" alt="QR code for reference number ${ref}" style="display:block;margin:0 auto;width:200px;height:200px;border:0;border-radius:14px;box-shadow:0 0 0 1px rgba(173,227,242,.45),0 14px 32px -14px rgba(94,182,211,.8);">
+        ${
+          online
+            ? zoomStub
+            : `<img src="${o.src('qr')}" width="200" height="200" alt="QR code for reference number ${ref}" style="display:block;margin:0 auto;width:200px;height:200px;border:0;border-radius:14px;box-shadow:0 0 0 1px rgba(173,227,242,.45),0 14px 32px -14px rgba(94,182,211,.8);">`
+        }
         <div style="padding-top:16px;">${label('Reference No.')}</div>
         <div style="font-family:${MONO};font-size:21px;line-height:28px;letter-spacing:1.5px;color:${C.ink2};font-weight:bold;">${ref}</div>
-        <div style="padding-top:6px;font-size:13px;line-height:19px;color:${C.muted};">Show this code at the registration desk</div>
+        ${online ? '' : `<div style="padding-top:6px;font-size:13px;line-height:19px;color:${C.muted};">Show this code at the registration desk</div>`}
       </td></tr>
     </table>
   </td></tr>
 
   <!-- buttons -->
   <tr><td class="px" align="center" style="padding:22px 28px 4px;background:${C.card};font-family:${BODY};" bgcolor="${C.card}">
-    <a class="btn" href="${esc(googleCalendarUrl(o.siteUrl))}" target="_blank" style="display:inline-block;margin:6px;padding:14px 24px;border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});color:#050122;font-family:${BODY};font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;">Add to Google Calendar</a>
-    <a class="btn" href="${esc(mapsUrl())}" target="_blank" style="display:inline-block;margin:6px;padding:12px 24px;border-radius:999px;border:2px solid ${C.cyan};color:${C.ink2};font-family:${BODY};font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;">Get directions</a>
+    <a class="btn" href="${esc(calendarUrl)}" target="_blank" style="display:inline-block;margin:6px;padding:14px 24px;border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});color:#050122;font-family:${BODY};font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;">Add to Google Calendar</a>${
+      online
+        ? ''
+        : `
+    <a class="btn" href="${esc(mapsUrl())}" target="_blank" style="display:inline-block;margin:6px;padding:12px 24px;border-radius:999px;border:2px solid ${C.cyan};color:${C.ink2};font-family:${BODY};font-size:15px;line-height:20px;font-weight:bold;text-decoration:none;">Get directions</a>`
+    }
     <div style="padding-top:10px;font-size:13px;line-height:19px;color:${C.muted};">Using Outlook or Apple Calendar? Open the attached invite (<span style="color:${C.ink3};">.ics</span> file).</div>
   </td></tr>
 
@@ -191,9 +250,22 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions) {
     <div style="height:1px;line-height:1px;font-size:0;background:${C.line};margin:12px 0 20px;">&nbsp;</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       ${detailRow('icon-calendar', `${esc(EVENT.weekday)}, ${esc(EVENT.dateEn)}`, 'Mark your calendar &mdash; the invite is attached.', o)}
-      ${detailRow('icon-clock', esc(EVENT.time), 'Philippine time. Come a little early to check in.', o)}
+      ${
+        online
+          ? `${detailRow('icon-clock', esc(EVENT.time), 'Philippine time. Join a few minutes early.', o)}
+      ${detailRow(
+        'icon-video',
+        'Online via Zoom',
+        joinUrl
+          ? 'Use the Join on Zoom button above, and join with your registered name so we can welcome you.'
+          : 'We&rsquo;ll email you the Zoom link before the event.',
+        o,
+        true,
+      )}`
+          : `${detailRow('icon-clock', esc(EVENT.time), 'Philippine time. Come a little early to check in.', o)}
       ${detailRow('icon-pin', esc(EVENT.venue), esc(EVENT.venueCampus), o)}
-      ${detailRow('icon-scan', 'At the door', 'Open this email or your saved pass. The desk scans your QR code and you&rsquo;re in.', o, true)}
+      ${detailRow('icon-scan', 'At the door', 'Open this email or your saved pass. The desk scans your QR code and you&rsquo;re in.', o, true)}`
+      }
     </table>
   </td></tr>
 ${
@@ -249,14 +321,25 @@ ${
     `Reference No.: ${d.ref}`,
     '',
     `When:  ${EVENT.weekday}, ${EVENT.dateEn}, ${EVENT.time} (Philippine time)`,
-    `Where: ${EVENT.venue}, ${EVENT.venueCampus}`,
-    '',
-    'At the door: show the QR code in this email (or on your saved boarding pass) at the registration desk.',
-    `Calendar: open the attached ${inviteFileName(d.ref)}, or add it to Google Calendar: ${googleCalendarUrl(o.siteUrl)}`,
-    `Directions: ${mapsUrl()}`,
+    ...(online
+      ? [
+          'Where: Online, live on Zoom',
+          '',
+          joinUrl
+            ? `Join on Zoom: ${joinUrl}\n(Join a few minutes early, with your registered name.)`
+            : 'Zoom link: we will email it to you before the event.',
+          `Calendar: open the attached ${inviteFileName(d.ref)}, or add it to Google Calendar: ${calendarUrl}`,
+        ]
+      : [
+          `Where: ${EVENT.venue}, ${EVENT.venueCampus}`,
+          '',
+          'At the door: show the QR code in this email (or on your saved boarding pass) at the registration desk.',
+          `Calendar: open the attached ${inviteFileName(d.ref)}, or add it to Google Calendar: ${calendarUrl}`,
+          `Directions: ${mapsUrl()}`,
+        ]),
     ...(d.question?.trim() ? ['', `Your question for the speaker: "${d.question.trim()}" (shared with the moderator)`] : []),
     '',
-    'See you there!',
+    online ? 'See you online!' : 'See you there!',
     EVENT.organizer,
     o.siteUrl,
   ]

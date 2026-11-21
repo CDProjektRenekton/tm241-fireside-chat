@@ -7,7 +7,7 @@ import { buildInvite, inviteFileName } from '@/lib/ics';
 import type { RegistrationInput } from '@/lib/types';
 import { ticketPayload } from '@/lib/ticket';
 import EventLogo from '../EventLogo';
-import { Check, Copy, Sparkle } from '../Icons';
+import { Check, Copy, External, Sparkle, Video } from '../Icons';
 import TicketQR from '../TicketQR';
 
 export function affiliationText(d: Pick<RegistrationInput, 'affiliation' | 'affiliationOther'>) {
@@ -39,13 +39,79 @@ export function CopyRef({ value }: { value: string }) {
 interface PassProps {
   data: RegistrationInput;
   refNo?: string;
+  /** Online registrants: the Zoom link, shown in place of the QR code once registered. */
+  joinUrl?: string | null;
+}
+
+/** Copies the Zoom link, for people who join from another device. */
+function CopyLink({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="pass-zoom-copy"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 2200);
+        } catch {
+          /* clipboard blocked */
+        }
+      }}
+    >
+      {copied ? <Check width={14} height={14} /> : <Copy width={14} height={14} />}
+      {copied ? 'Link copied' : 'Copy Zoom link'}
+    </button>
+  );
+}
+
+/** Where the QR code goes on an onsite pass: the Zoom button (or a note while there is none yet). */
+function ZoomStub({ refNo, joinUrl }: { refNo?: string; joinUrl?: string | null }) {
+  if (!refNo) {
+    return (
+      <span className="pass-qr is-pending pass-zoom-pending">
+        <Video width={22} height={22} />
+        Zoom link appears after you register
+      </span>
+    );
+  }
+  if (!joinUrl) {
+    return (
+      <span className="pass-qr is-pending pass-zoom-pending">
+        <Video width={22} height={22} />
+        Your Zoom link will be sent by email before the event
+      </span>
+    );
+  }
+  return (
+    <div className="pass-zoom">
+      <span className="pass-zoom-badge" aria-hidden="true">
+        <Video width={28} height={28} />
+      </span>
+      <a className="btn btn-primary pass-zoom-btn" href={joinUrl} target="_blank" rel="noopener noreferrer">
+        Join on Zoom
+        <External width={16} height={16} />
+      </a>
+      <span className="pass-zoom-when">
+        <span>Opens {EVENT.time.split(' – ')[0]}</span> <span>{EVENT.weekday.slice(0, 3)} {EVENT.dateShort}</span>
+      </span>
+      <CopyLink value={joinUrl} />
+      {/* on paper, the link itself */}
+      <span className="pass-zoom-url print-only">{joinUrl}</span>
+    </div>
+  );
 }
 
 /** The "boarding pass" for the Fireside Chat: a live preview before submitting, the real pass afterwards. */
-export function MissionPass({ data, refNo }: PassProps) {
+export function MissionPass({ data, refNo, joinUrl }: PassProps) {
   const affiliation = affiliationText(data);
+  const online = data.attendanceMode === 'Online';
   return (
-    <article className={`pass${refNo ? ' is-issued' : ' is-preview'}`} aria-label="Fireside Chat boarding pass">
+    <article
+      className={`pass${refNo ? ' is-issued' : ' is-preview'}${online ? ' is-online' : ''}`}
+      aria-label="Fireside Chat boarding pass"
+    >
       <div className="pass-main">
         <header className="pass-band">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -84,7 +150,15 @@ export function MissionPass({ data, refNo }: PassProps) {
             <div className="pass-gate">
               <dt>Gate</dt>
               <dd>
-                {EVENT.venue} · <span>UP Diliman</span>
+                {online ? (
+                  <>
+                    Online · <span>Live on Zoom</span>
+                  </>
+                ) : (
+                  <>
+                    {EVENT.venue} · <span>UP Diliman</span>
+                  </>
+                )}
               </dd>
             </div>
           </dl>
@@ -94,12 +168,14 @@ export function MissionPass({ data, refNo }: PassProps) {
         <span className="pass-perf" aria-hidden="true" />
         <span className="pass-label">Reference No.</span>
         <strong className="pass-ref">{refNo ?? 'Pending'}</strong>
-        {refNo ? (
+        {online ? (
+          <ZoomStub refNo={refNo} joinUrl={joinUrl} />
+        ) : refNo ? (
           <TicketQR className="pass-qr" value={ticketPayload(refNo)} />
         ) : (
           <span className="pass-qr is-pending">QR code appears after you register</span>
         )}
-        <span className="pass-admit">Admit one</span>
+        <span className="pass-admit">{online ? 'Joining online' : 'Admit one'}</span>
       </div>
     </article>
   );
@@ -107,8 +183,14 @@ export function MissionPass({ data, refNo }: PassProps) {
 
 // ---------------------------------------------------------------- calendar invite
 
-export function downloadInvite(refNo: string, data: RegistrationInput) {
-  const ics = buildInvite({ ref: refNo, name: data.name, organization: data.organization });
+export function downloadInvite(refNo: string, data: RegistrationInput, joinUrl?: string | null) {
+  const ics = buildInvite({
+    ref: refNo,
+    name: data.name,
+    organization: data.organization,
+    online: data.attendanceMode === 'Online',
+    joinUrl,
+  });
   const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;

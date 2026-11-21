@@ -55,7 +55,7 @@ export default function Home() {
                 <MapPin />
                 <span>
                   <b>{EVENT.venue}</b>
-                  <small>UP Diliman, Quezon City</small>
+                  <small>UP Diliman, Quezon City · or online via Zoom</small>
                 </span>
               </li>
             </ul>

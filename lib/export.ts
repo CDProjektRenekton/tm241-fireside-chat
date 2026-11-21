@@ -1,6 +1,6 @@
 import 'server-only';
 import ExcelJS from 'exceljs';
-import { EVENT, TOPIC_SHORT, type Topic, venueFull } from './config';
+import { attendanceModeOf, EVENT, TOPIC_SHORT, type Topic, venueFull } from './config';
 import { F_DETAIL } from './fields';
 import { DETAIL_KEYS, type DetailKey, detailText, isOtherKey, questionsFor } from './roles';
 import { affiliationLabel, computeStats, duplicateKey, findDuplicates, formatDateTime, topicsLabel } from './stats';
@@ -34,6 +34,7 @@ const REG_HEADERS = [
   'Question for the Speaker',
   'Hopes to Learn',
   'Data Privacy Consent',
+  'Attendance Mode',
   'Attended',
   'Checked In At',
   'Possible Duplicate',
@@ -55,6 +56,7 @@ function registrationRows(rows: Registration[]): Row[] {
     'Question for the Speaker': r.question,
     'Hopes to Learn': r.hopes,
     'Data Privacy Consent': r.consent,
+    'Attendance Mode': attendanceModeOf(r),
     Attended: r.attended ? 'Yes' : '',
     'Checked In At': r.attended ? formatDateTime(r.checkedInAt) : '',
     'Possible Duplicate': dups.has(duplicateKey(r)) ? 'Yes' : '',
@@ -72,9 +74,10 @@ const ATTENDANCE_HEADERS = [
   'Signature',
 ];
 
-/** Alphabetical sign-in sheet for the registration desk. */
+/** Alphabetical sign-in sheet for the registration desk — onsite registrants only (online ones join on Zoom). */
 function attendanceRows(rows: Registration[]): Row[] {
-  return [...rows]
+  return rows
+    .filter((r) => attendanceModeOf(r) === 'Onsite')
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
     .map((r, i) => ({
       'No.': i + 1,
@@ -234,6 +237,8 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
   const share = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '0%');
   section('Key figures', ['Metric', 'Value'], [
     ['Registrations', stats.total],
+    ['Joining onsite', stats.onsite],
+    ['Joining online (Zoom)', stats.online],
     ['Checked in at the event', stats.attended],
     ['Universities / organizations represented', stats.organizations],
     ['Students (undergraduate + graduate)', stats.students],
@@ -244,6 +249,10 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
   const notAsked: (string | number)[][] = stats.demographicsNotAsked
     ? [['Not asked (registered before the question was added)', stats.demographicsNotAsked, share(stats.demographicsNotAsked, stats.total)]]
     : [];
+  section('Onsite or online', ['Joining', 'Registrants', 'Share'], [
+    ...stats.byMode.map((m) => [m.label === 'Online' ? 'Online (Zoom)' : 'Onsite', m.count, share(m.count, stats.total)]),
+    ['Registrations from before the question was added count as onsite.', '', ''],
+  ]);
   section('Sex', ['Sex', 'Registrants', 'Share'], [
     ...stats.bySex.map((s) => [s.label, s.count, share(s.count, stats.total)]),
     ...notAsked,
@@ -292,6 +301,7 @@ export async function buildWorkbook(rows: Registration[], filterLabel: string, o
     'Topics of Interest': 48,
     'Question for the Speaker': 52,
     'Hopes to Learn': 52,
+    'Attendance Mode': 18,
     'Checked In At': 22,
   });
   const att = addTableSheet(wb, 'Attendance Sheet', attendanceRows(rows), ATTENDANCE_HEADERS, {

@@ -1,6 +1,15 @@
 // Filtering and summary statistics shared by the dashboard and the export endpoint,
 // so the numbers on screen always match the downloaded file.
-import { type Affiliation, AFFILIATIONS, AGE_GROUPS, SEXES, STUDENT_AFFILIATIONS, TOPICS } from './config';
+import {
+  type Affiliation,
+  AFFILIATIONS,
+  AGE_GROUPS,
+  ATTENDANCE_MODES,
+  attendanceModeOf,
+  SEXES,
+  STUDENT_AFFILIATIONS,
+  TOPICS,
+} from './config';
 import { type DetailKey, type DetailKind, DETAIL_KEYS, ROLE_QUESTIONS, YEAR_RANGES, yearRange } from './roles';
 import type { Registration } from './types';
 
@@ -12,6 +21,8 @@ export interface Filters {
   /** Age group */
   age: string;
   affiliation: string;
+  /** Onsite or Online (earlier registrations count as onsite). */
+  mode: '' | 'Onsite' | 'Online';
   topic: string;
   question: '' | 'yes' | 'no';
   /** Checked in at the event (the Attended box in Airtable). */
@@ -19,7 +30,17 @@ export interface Filters {
   range: RangeKey;
 }
 
-export const EMPTY_FILTERS: Filters = { q: '', sex: '', age: '', affiliation: '', topic: '', question: '', attended: '', range: 'all' };
+export const EMPTY_FILTERS: Filters = {
+  q: '',
+  sex: '',
+  age: '',
+  affiliation: '',
+  mode: '',
+  topic: '',
+  question: '',
+  attended: '',
+  range: 'all',
+};
 
 export const RANGE_LABELS: Record<RangeKey, string> = {
   all: 'All time',
@@ -54,11 +75,13 @@ export function filtersFromParams(p: URLSearchParams): Filters {
   const range = p.get('range') as RangeKey | null;
   const question = p.get('question');
   const attended = p.get('attended');
+  const mode = p.get('mode');
   return {
     q: p.get('q') ?? '',
     sex: p.get('sex') ?? '',
     age: p.get('age') ?? '',
     affiliation: p.get('affiliation') ?? '',
+    mode: mode === 'Onsite' || mode === 'Online' ? mode : '',
     topic: p.get('topic') ?? '',
     question: question === 'yes' || question === 'no' ? question : '',
     attended: attended === 'yes' || attended === 'no' ? attended : '',
@@ -78,6 +101,7 @@ export function describeFilters(f: Filters) {
   if (f.sex) parts.push(`Sex: ${f.sex}`);
   if (f.age) parts.push(`Age group: ${f.age}`);
   if (f.affiliation) parts.push(f.affiliation);
+  if (f.mode) parts.push(f.mode === 'Online' ? 'Joining online' : 'Joining onsite');
   if (f.topic) parts.push(`Interested in “${f.topic}”`);
   if (f.question) parts.push(f.question === 'yes' ? 'With a question for the speaker' : 'Without a question');
   if (f.attended) parts.push(f.attended === 'yes' ? 'Checked in' : 'Not checked in');
@@ -96,6 +120,7 @@ export function applyFilters(rows: Registration[], f: Filters, now = new Date())
     if (f.sex && r.sex !== f.sex) return false;
     if (f.age && r.ageGroup !== f.age) return false;
     if (f.affiliation && r.affiliation !== f.affiliation) return false;
+    if (f.mode && attendanceModeOf(r) !== f.mode) return false;
     if (f.topic && !r.topics.includes(f.topic)) return false;
     if (f.question === 'yes' && !r.question) return false;
     if (f.question === 'no' && r.question) return false;
@@ -137,6 +162,11 @@ export interface Stats {
   today: number;
   /** Checked in at the event. */
   attended: number;
+  /** Joining onsite (including everyone who registered before the question) or online. */
+  onsite: number;
+  online: number;
+  /** Onsite, then Online. */
+  byMode: { label: string; count: number }[];
   /** In the form's order (not sorted by count). */
   bySex: { label: string; count: number }[];
   /** Youngest to oldest, then "Prefer not to say". */
@@ -267,6 +297,7 @@ export function computeStats(rows: Registration[], now = new Date()): Stats {
 
   const dupKeys = findDuplicates(rows);
   const todayKey = dayKey(now);
+  const byMode = ATTENDANCE_MODES.map((m) => ({ label: m as string, count: rows.filter((r) => attendanceModeOf(r) === m).length }));
 
   return {
     total: rows.length,
@@ -276,6 +307,9 @@ export function computeStats(rows: Registration[], now = new Date()): Stats {
     hopes: rows.filter((r) => r.hopes).length,
     today: rows.filter((r) => dayKey(r.submittedAt) === todayKey).length,
     attended: rows.filter((r) => r.attended).length,
+    onsite: byMode[0].count,
+    online: byMode[1].count,
+    byMode,
     bySex: SEXES.map((s) => ({ label: s as string, count: rows.filter((r) => r.sex === s).length })),
     byAge: AGE_GROUPS.map((a) => ({ label: a as string, count: rows.filter((r) => r.ageGroup === a).length })),
     demographicsNotAsked: rows.filter((r) => !r.sex && !r.ageGroup).length,

@@ -20,6 +20,7 @@ import {
   Info,
   Landmark,
   Mail,
+  MapPin,
   Pencil,
   Plus,
   Presentation,
@@ -27,6 +28,7 @@ import {
   Rocket,
   Shield,
   User,
+  Video,
 } from '../Icons';
 import CardSweep from '../CardSweep';
 import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from './Fields';
@@ -44,6 +46,7 @@ const initialData = (): RegistrationInput => ({
   affiliation: '',
   affiliationOther: '',
   ...EMPTY_DETAILS,
+  attendanceMode: '',
   topics: [],
   topicsOther: '',
   question: '',
@@ -72,6 +75,10 @@ const SEX_OPTIONS = SEXES.map((s) => ({ value: s, label: s }));
 const AGE_OPTIONS = AGE_GROUPS.map((a) => ({ value: a, label: a }));
 const AFFILIATION_OPTIONS = AFFILIATIONS.map((a) => ({ value: a, label: a, icon: AFFILIATION_ICONS[a] }));
 const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
+const MODE_OPTIONS = [
+  { value: 'Onsite', label: 'Onsite', sub: 'In person at UP Diliman', icon: <MapPin /> },
+  { value: 'Online', label: 'Online', sub: 'Live on Zoom', icon: <Video /> },
+];
 const CONSENT_OPTIONS = [
   { value: 'Yes', label: 'Yes', sub: 'I give my consent', icon: <Check /> },
   { value: 'No', label: 'No', sub: 'I do not consent', icon: <Alert /> },
@@ -94,7 +101,13 @@ export default function RegistrationForm() {
   const [attempted, setAttempted] = useState<Record<Step, boolean>>({ 1: false, 2: false, 3: false });
   const [status, setStatus] = useState<Status>('idle');
   const [serverError, setServerError] = useState('');
-  const [result, setResult] = useState<{ ref: string; data: RegistrationInput; emailed: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    ref: string;
+    data: RegistrationInput;
+    emailed: boolean;
+    /** Online registrants only, and only when the Zoom link is set on the server. */
+    joinUrl: string | null;
+  } | null>(null);
   const cardRef = useRef<HTMLElement>(null);
   const loaded = useRef(false);
 
@@ -199,6 +212,7 @@ export default function RegistrationForm() {
         ok?: boolean;
         ref?: string;
         emailed?: boolean;
+        joinUrl?: string;
         message?: string;
         errors?: FieldErrors;
       };
@@ -212,7 +226,12 @@ export default function RegistrationForm() {
         }
         throw new Error(json.message || 'Submission failed. Please try again.');
       }
-      setResult({ ref: json.ref, data, emailed: Boolean(json.emailed) });
+      setResult({
+        ref: json.ref,
+        data,
+        emailed: Boolean(json.emailed),
+        joinUrl: data.attendanceMode === 'Online' && json.joinUrl ? json.joinUrl : null,
+      });
       setStatus('done');
       try {
         sessionStorage.removeItem(DRAFT_KEY);
@@ -254,21 +273,30 @@ export default function RegistrationForm() {
 
   if (status === 'done' && result) {
     const first = result.data.name.split(' ')[0];
+    const online = result.data.attendanceMode === 'Online';
     return (
       <section className="form-card success-card" ref={cardRef} aria-live="polite">
         <CardSweep />
         <Liftoff />
-        <p className="success-script">See you there</p>
+        <p className="success-script">{online ? 'See you online' : 'See you there'}</p>
         <h2 className="success-title">You&rsquo;re cleared for liftoff!</h2>
         <p className="success-lead">
-          Thank you, {first}! Your registration for <b>{EVENT.title}</b> has been received. Here is your boarding pass —
-          save or print it, and show its QR code at the registration desk on the day.
+          Thank you, {first}! Your registration for <b>{EVENT.title}</b> has been received.{' '}
+          {online
+            ? result.joinUrl
+              ? 'You’re joining online — use the Join on Zoom button on your boarding pass on the day. It’s in your email too.'
+              : 'You’re joining online — we’ll email you the Zoom link before the event.'
+            : 'Here is your boarding pass — save or print it, and show its QR code at the registration desk on the day.'}
         </p>
 
-        <MissionPass data={result.data} refNo={result.ref} />
+        <MissionPass data={result.data} refNo={result.ref} joinUrl={result.joinUrl} />
 
         <div className="pass-actions no-print">
-          <button type="button" className="btn btn-primary" onClick={() => downloadInvite(result.ref, result.data)}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => downloadInvite(result.ref, result.data, result.joinUrl)}
+          >
             <CalendarPlus />
             Add to calendar
           </button>
@@ -286,7 +314,7 @@ export default function RegistrationForm() {
           </li>
           <li>
             <span>Where</span>
-            {EVENT.venue}, UP Diliman
+            {online ? 'Online, live on Zoom' : `${EVENT.venue}, UP Diliman`}
           </li>
           {result.emailed && (
             <li>
@@ -468,6 +496,18 @@ export default function RegistrationForm() {
                 ) : null
               }
             />
+            <CardChoice
+              name="attendanceMode"
+              number={7}
+              label="How will you join?"
+              hint="Online participants get a Zoom link instead of a QR code."
+              required
+              className="cards-mode"
+              options={MODE_OPTIONS}
+              value={data.attendanceMode}
+              onChange={set('attendanceMode') as (v: string) => void}
+              error={errors.attendanceMode}
+            />
           </div>
         )}
 
@@ -480,7 +520,7 @@ export default function RegistrationForm() {
 
             <ChipChoice
               name="topics"
-              number={7}
+              number={8}
               label="Which topics interest you most?"
               hint="Check all that apply."
               options={TOPIC_OPTIONS}
@@ -505,7 +545,7 @@ export default function RegistrationForm() {
             </ChipChoice>
             <TextField
               name="question"
-              number={8}
+              number={9}
               label="Do you have a question for our guest speaker?"
               multiline
               rows={4}
@@ -517,7 +557,7 @@ export default function RegistrationForm() {
             />
             <TextField
               name="hopes"
-              number={9}
+              number={10}
               label="What do you hope to learn from this Fireside Chat?"
               multiline
               rows={4}
@@ -566,7 +606,7 @@ export default function RegistrationForm() {
               </p>
               <CardChoice
                 name="consent"
-                number={10}
+                number={11}
                 label="I voluntarily consent to the collection and processing of my information for event registration, attendance monitoring, and event coordination."
                 required
                 className="cards-consent"

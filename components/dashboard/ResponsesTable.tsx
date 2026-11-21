@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TOPIC_SHORT, type Topic } from '@/lib/config';
+import { attendanceModeOf, TOPIC_SHORT, type Topic } from '@/lib/config';
 import { detailText, questionsFor } from '@/lib/roles';
 import { affiliationLabel, duplicateKey, formatDateTime } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
-import { Alert, Check, ChevronDown, Mail, Message, X } from '../Icons';
+import { Alert, Check, ChevronDown, Mail, Message, Video, X } from '../Icons';
 
 type SortKey = 'submittedAt' | 'name' | 'organization' | 'affiliation';
 const PAGE_SIZE = 20;
@@ -57,6 +57,15 @@ function EmailActions({ reg }: { reg: Registration }) {
         </span>
       )}
     </div>
+  );
+}
+
+function OnlineBadge() {
+  return (
+    <span className="status status-online" title="Joining online — gets the Zoom link instead of a QR code">
+      <Video width={13} height={13} />
+      Online
+    </span>
   );
 }
 
@@ -144,6 +153,7 @@ export default function ResponsesTable({
                 <td data-label="Registrant">
                   <span className="cell-strong">{r.name || '—'}</span>
                   <span className="cell-sub">{r.email}</span>
+                  {attendanceModeOf(r) === 'Online' && <OnlineBadge />}
                   {r.attended && <AttendedBadge at={r.checkedInAt} />}
                   {dupKeys.has(duplicateKey(r)) && <DupBadge />}
                 </td>
@@ -212,15 +222,26 @@ export default function ResponsesTable({
               </button>
             </header>
             <div className="detail-badges">
+              {attendanceModeOf(selected) === 'Online' && <OnlineBadge />}
               {selected.attended ? (
                 <AttendedBadge at={selected.checkedInAt} />
-              ) : (
+              ) : attendanceModeOf(selected) === 'Online' ? null : (
                 <span className="status status-neutral">Not checked in yet</span>
               )}
               {dupKeys.has(duplicateKey(selected)) && <DupBadge />}
               <span className="status status-neutral">Data privacy consent: {selected.consent || '—'}</span>
             </div>
             <dl className="detail-grid">
+              <div className="span-2">
+                <dt>Joining</dt>
+                <dd>
+                  {selected.attendanceMode === 'Online'
+                    ? 'Online, on Zoom (their email has the Zoom link)'
+                    : selected.attendanceMode === 'Onsite'
+                      ? 'Onsite (their email has the QR code)'
+                      : 'Onsite (registered before this question was added)'}
+                </dd>
+              </div>
               <div>
                 <dt>Sex</dt>
                 <dd>{selected.sex || <span className="muted">Not asked (registered earlier)</span>}</dd>

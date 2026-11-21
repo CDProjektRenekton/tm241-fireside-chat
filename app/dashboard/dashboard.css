@@ -974,6 +974,13 @@ a.head-btn {
   border: 1px solid var(--line);
 }
 
+/* joining online (Zoom) */
+.status-online {
+  background: rgba(167, 180, 255, 0.12);
+  color: #c9d0ff;
+  border: 1px solid rgba(167, 180, 255, 0.35);
+}
+
 .dup-note {
   margin-top: 14px;
   white-space: normal;

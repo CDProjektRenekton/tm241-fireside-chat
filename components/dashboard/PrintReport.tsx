@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { EVENT, TOPIC_SHORT, type Topic } from '@/lib/config';
+import { attendanceModeOf, EVENT, TOPIC_SHORT, type Topic } from '@/lib/config';
 import { detailText, questionsFor } from '@/lib/roles';
 import { affiliationLabel, duplicateKey, formatDateTime, type Stats } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
@@ -141,17 +141,20 @@ export default function PrintReport({
 
       <section className="pr-kpis" aria-label="Key figures">
         <Kpi label="Registrations" value={stats.total} note={stats.today ? `+${fmt(stats.today)} today` : undefined} />
-        <Kpi label="Checked in" value={stats.attended} note={`${pct(stats.attended, stats.total)}% of registrants`} />
+        <Kpi label="Checked in" value={stats.attended} note={`${pct(stats.attended, stats.onsite)}% of onsite registrants`} />
         <Kpi label="Universities & organizations" value={stats.organizations} />
         <Kpi label="Students" value={stats.students} note={`${pct(stats.students, stats.total)}% undergraduate & graduate`} />
         <Kpi label="Questions for the speaker" value={stats.questions} note={`${pct(stats.questions, stats.total)}% asked one`} />
         <Kpi label="Shared what they hope to learn" value={stats.hopes} />
-        <Kpi label="Picked a topic" value={stats.topicResponders} note={`${pct(stats.topicResponders, stats.total)}% of registrants`} />
+        <Kpi label="Joining online" value={stats.online} note={`${pct(stats.online, stats.total)}% · ${fmt(stats.onsite)} onsite`} />
         <Kpi label="Possible duplicates" value={stats.duplicates} note="same email address" />
       </section>
 
       <h2 className="pr-h2">Who registered</h2>
       <div className="pr-grid">
+        <Block title="Onsite or online" note="Registrations from before the question was added count as onsite.">
+          <Bars items={stats.byMode.map((m) => ({ label: m.label === 'Online' ? 'Online (Zoom)' : 'Onsite', count: m.count }))} total={stats.total} />
+        </Block>
         <Block title="Current affiliation">
           <Bars items={stats.byAffiliation} total={stats.total} />
         </Block>
@@ -218,7 +221,8 @@ export default function PrintReport({
 
       <h2 className="pr-h2 pr-new-page">Registrations</h2>
       <p className="pr-note pr-lead">
-        {fmt(rows.length)} {rows.length === 1 ? 'registration' : 'registrations'}, sorted by name. ✓ = checked in at the event.
+        {fmt(rows.length)} {rows.length === 1 ? 'registration' : 'registrations'}, sorted by name. ✓ = checked in at the event;
+        “Online” = joining on Zoom.
       </p>
       {byName.length === 0 ? (
         <p className="pr-empty">No registrations match these filters yet.</p>
@@ -262,7 +266,13 @@ export default function PrintReport({
                     {r.ageGroup && <small>{r.ageGroup}</small>}
                   </td>
                   <td>{shortStamp.format(new Date(r.submittedAt))}</td>
-                  <td>{r.attended ? `✓ ${r.checkedInAt ? shortStamp.format(new Date(r.checkedInAt)) : ''}` : ''}</td>
+                  <td>
+                    {r.attended
+                      ? `✓ ${r.checkedInAt ? shortStamp.format(new Date(r.checkedInAt)) : ''}`
+                      : attendanceModeOf(r) === 'Online'
+                        ? 'Online'
+                        : ''}
+                  </td>
                 </tr>
               );
             })}

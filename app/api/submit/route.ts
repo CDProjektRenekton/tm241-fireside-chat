@@ -7,6 +7,7 @@ import { F, F_DETAIL } from '@/lib/fields';
 import { DETAIL_KEYS } from '@/lib/roles';
 import { REF_ALPHABET, REF_CODE_LENGTH } from '@/lib/ticket';
 import { normalizeInput, validateAll } from '@/lib/validation';
+import { zoomJoinUrl } from '@/lib/zoom';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
     [F.affiliation]: input.affiliation,
     [F.affiliationOther]: input.affiliationOther,
     ...Object.fromEntries(DETAIL_KEYS.map((k) => [F_DETAIL[k], k === 'years' && input.years ? Number(input.years) : input[k]])),
+    [F.attendanceMode]: input.attendanceMode,
     [F.topics]: input.topics,
     [F.topicsOther]: input.topicsOther,
     [F.question]: input.question,
@@ -62,6 +64,9 @@ export async function POST(req: Request) {
     const v = fields[k];
     if (v === '' || (Array.isArray(v) && v.length === 0)) delete fields[k];
   }
+
+  // Only someone who just registered to join online gets the Zoom link back.
+  const joinUrl = input.attendanceMode === 'Online' ? zoomJoinUrl() : null;
 
   try {
     await createRegistration(fields);
@@ -74,10 +79,12 @@ export async function POST(req: Request) {
         organization: input.organization,
         affiliation: input.affiliation === 'Other' ? input.affiliationOther || 'Other' : input.affiliation,
         question: input.question,
+        attendanceMode: input.attendanceMode || 'Onsite',
+        joinUrl,
       },
       req,
     );
-    return NextResponse.json({ ok: true, ref, emailed });
+    return NextResponse.json({ ok: true, ref, emailed, ...(joinUrl ? { joinUrl } : {}) });
   } catch (e) {
     if (e instanceof ConfigError) {
       console.error('[submit] configuration error:', e.message);

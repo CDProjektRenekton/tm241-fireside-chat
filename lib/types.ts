@@ -1,4 +1,4 @@
-import type { Affiliation, AgeGroup, Sex } from './config';
+import type { Affiliation, AgeGroup, AttendanceMode, Sex } from './config';
 import type { RoleDetails } from './roles';
 
 /**
@@ -13,6 +13,8 @@ export interface RegistrationInput extends RoleDetails {
   organization: string;
   affiliation: Affiliation | '';
   affiliationOther: string;
+  /** Onsite (QR code at the door) or Online (Zoom). */
+  attendanceMode: AttendanceMode | '';
   topics: string[];
   topicsOther: string;
   question: string;
@@ -40,6 +42,8 @@ export interface Registration extends RoleDetails {
   /** One of AFFILIATIONS (or a value someone typed into Airtable directly). */
   affiliation: string;
   affiliationOther: string;
+  /** "Onsite" or "Online"; empty for registrations made before the question (all onsite — see attendanceModeOf). */
+  attendanceMode: string;
   topics: string[];
   topicsOther: string;
   question: string;
@@ -57,6 +61,8 @@ export interface DeskRecord {
   name: string;
   organization: string;
   affiliation: string;
+  /** "Onsite" or "Online" (earlier registrations count as onsite). */
+  attendanceMode: AttendanceMode;
   attended: boolean;
   checkedInAt: string;
   /** Masked, only in name-search results, to tell two people with the same name apart. */

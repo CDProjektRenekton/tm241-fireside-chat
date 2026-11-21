@@ -280,3 +280,17 @@ export const ScanQr = (p: P) => (
     <path d="M13 7h4v2M7 15v2h2" />
   </svg>
 );
+/** Video camera, for joining online (Zoom). */
+export const Video = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+    <path d="M15.5 10.5 21.5 7v10l-6-3.5" />
+  </svg>
+);
+/** Arrow out of a box: opens in a new tab. */
+export const External = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14 4h6v6M20 4l-9 9" />
+    <path d="M19 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5H10" />
+  </svg>
+);

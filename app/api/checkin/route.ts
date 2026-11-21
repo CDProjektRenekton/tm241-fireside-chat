@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AirtableError, ConfigError, findById, findByRef, listRegistrations, setAttendance } from '@/lib/airtable';
 import { canCheckIn, sameOrigin } from '@/lib/auth';
+import { attendanceModeOf } from '@/lib/config';
 import { affiliationLabel } from '@/lib/stats';
 import { maskEmail, parseRef } from '@/lib/ticket';
 import type { CheckInResult, DeskRecord, Registration } from '@/lib/types';
@@ -18,6 +19,7 @@ const toDesk = (r: Registration, withEmail = false): DeskRecord => ({
   name: r.name,
   organization: r.organization,
   affiliation: affiliationLabel(r),
+  attendanceMode: attendanceModeOf(r),
   attended: r.attended,
   checkedInAt: r.checkedInAt,
   ...(withEmail ? { email: maskEmail(r.email) } : {}),

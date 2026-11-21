@@ -252,6 +252,7 @@ function toRegistration(r: AirtableRecord): Registration {
     affiliation: str(f[F.affiliation]),
     affiliationOther: str(f[F.affiliationOther]),
     ...(Object.fromEntries(DETAIL_KEYS.map((k) => [k, str(f[F_DETAIL[k]])])) as RoleDetails),
+    attendanceMode: str(f[F.attendanceMode]),
     topics: list(f[F.topics]),
     topicsOther: str(f[F.topicsOther]),
     question: str(f[F.question]),

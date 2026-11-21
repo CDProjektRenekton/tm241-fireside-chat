@@ -1,5 +1,5 @@
 // Shared by the form (instant feedback) and /api/submit (the authority).
-import { AFFILIATIONS, AGE_GROUPS, SEXES, TOPICS } from './config';
+import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, SEXES, TOPICS } from './config';
 import { EMPTY_DETAILS, questionsFor, YEARS_MAX } from './roles';
 import type { FieldErrors, RegistrationInput } from './types';
 
@@ -60,6 +60,7 @@ export function validateStep1(d: RegistrationInput): FieldErrors {
     else if (d.affiliationOther.length > LIMITS.short) e.affiliationOther = MSG.tooLong;
   }
   validateDetails(e, d);
+  if (!ATTENDANCE_MODES.includes(d.attendanceMode as never)) e.attendanceMode = MSG.choose;
   return e;
 }
 
@@ -138,6 +139,7 @@ export function normalizeInput(body: unknown): RegistrationInput {
     organization: clean(b.organization),
     affiliation,
     affiliationOther: affiliation === 'Other' ? clean(b.affiliationOther) : '',
+    attendanceMode: clean(b.attendanceMode) as RegistrationInput['attendanceMode'],
     // Keep the official order so Airtable and exports list topics consistently.
     // Unknown values are kept so validation can reject them.
     topics: [...TOPICS.filter((t) => topics.includes(t)), ...topics.filter((t) => !TOPICS.includes(t as never))],

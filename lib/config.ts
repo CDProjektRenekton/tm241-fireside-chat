@@ -26,6 +26,18 @@ export const EVENT = {
 
 export const venueFull = () => `${EVENT.venue}, ${EVENT.venueCampus}`;
 
+/**
+ * "How will you join?" — onsite registrants get a QR code for the door, online registrants a Zoom
+ * button. The Zoom link itself is never in the code (the repository is public): it is the
+ * ZOOM_JOIN_URL environment variable, read on the server only (lib/zoom.ts).
+ */
+export const ATTENDANCE_MODES = ['Onsite', 'Online'] as const;
+export type AttendanceMode = (typeof ATTENDANCE_MODES)[number];
+
+/** Registrations made before the question existed were all for the onsite event. */
+export const attendanceModeOf = (r: { attendanceMode?: string }): AttendanceMode =>
+  r.attendanceMode === 'Online' ? 'Online' : 'Onsite';
+
 /** "Sex" — reported only as group totals (e.g. sex-disaggregated attendance). */
 export const SEXES = ['Female', 'Male', 'Prefer not to say'] as const;
 export type Sex = (typeof SEXES)[number];

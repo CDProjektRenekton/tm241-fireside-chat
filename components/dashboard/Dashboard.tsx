@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { AFFILIATIONS, AGE_GROUPS, EVENT, SEXES, TOPIC_SHORT, TOPICS, type Topic } from '@/lib/config';
+import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, EVENT, SEXES, TOPIC_SHORT, TOPICS, type Topic } from '@/lib/config';
 import {
   applyFilters,
   computeStats,
@@ -112,7 +112,7 @@ export default function Dashboard() {
   const dupKeys = useMemo(() => findDuplicates(records), [records]);
 
   const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((f) => ({ ...f, [key]: value }));
-  const toggleFilter = (key: 'affiliation' | 'topic' | 'sex' | 'age', value: string) =>
+  const toggleFilter = (key: 'affiliation' | 'topic' | 'sex' | 'age' | 'mode', value: string) =>
     setFilters((f) => ({ ...f, [key]: f[key] === value ? '' : value }));
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS);
 
@@ -286,6 +286,15 @@ export default function Dashboard() {
               </select>
             </label>
             <label className="filter">
+              <span>Joining</span>
+              <select value={filters.mode} onChange={(e) => setFilter('mode', e.target.value as Filters['mode'])}>
+                <option value="">Onsite &amp; online</option>
+                {ATTENDANCE_MODES.map((m) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+            </label>
+            <label className="filter">
               <span>Topic</span>
               <select value={filters.topic} onChange={(e) => setFilter('topic', e.target.value)}>
                 <option value="">All topics</option>
@@ -370,7 +379,7 @@ export default function Dashboard() {
               <StatTile
                 label="Checked in"
                 value={stats.attended}
-                note={stats.attended ? `${pct(stats.attended, stats.total)}% of registrants` : 'Scanned at /checkin'}
+                note={stats.attended ? `${pct(stats.attended, stats.onsite)}% of onsite registrants` : 'Scanned at /checkin'}
               />
               <StatTile
                 label="Universities & organizations"
@@ -391,6 +400,32 @@ export default function Dashboard() {
             </section>
 
             <section className="chart-grid">
+              <article className="card card-wide">
+                <header className="card-head">
+                  <h2>Onsite or online</h2>
+                  <p>
+                    How registrants are joining: onsite with a QR code, or online with the Zoom link. Click a bar to filter the
+                    dashboard.
+                  </p>
+                </header>
+                <BarList
+                  unit="registrants"
+                  picked={filters.mode}
+                  onPick={(k) => toggleFilter('mode', k)}
+                  items={stats.byMode.map((m) => ({
+                    key: m.label,
+                    label: m.label === 'Online' ? 'Online (Zoom)' : 'Onsite',
+                    value: m.count,
+                    extra: `${pct(m.count, stats.total)}%`,
+                    tip: [{ value: fmt(m.count), label: `registrants · ${pct(m.count, stats.total)}% of all`, color: 'var(--s1)' }],
+                  }))}
+                />
+                <p className="muted demo-note">
+                  {fmt(stats.attended)} of {plural(stats.onsite, 'onsite registrant', 'onsite registrants')} checked in so far.
+                  Registrations from before this question was added count as onsite.
+                </p>
+              </article>
+
               <article className="card">
                 <header className="card-head">
                   <h2>Current affiliation</h2>

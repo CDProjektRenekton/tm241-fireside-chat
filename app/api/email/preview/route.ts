@@ -3,6 +3,7 @@ import { findById } from '@/lib/airtable';
 import { isAuthenticated } from '@/lib/auth';
 import { previewTicketEmail, siteUrl, ticketDataFrom } from '@/lib/email/send';
 import type { TicketEmailData } from '@/lib/email/template';
+import { zoomJoinUrl } from '@/lib/zoom';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,18 +15,22 @@ const SAMPLE: TicketEmailData = {
   organization: 'UP Diliman',
   affiliation: 'Graduate Student',
   question: 'What was the hardest capability to build first, and how did you know it was the right one?',
+  attendanceMode: 'Onsite',
 };
 
 /**
  * The confirmation email as a web page, for organizers: /api/email/preview shows it with sample
- * details, /api/email/preview?id=rec… with a real registrant's. Dashboard sign-in required.
+ * details (?mode=online for the online version), /api/email/preview?id=rec… with a real
+ * registrant's. Dashboard sign-in required.
  */
 export async function GET(req: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ message: 'Sign in to the dashboard first.' }, { status: 401 });
   }
-  const id = new URL(req.url).searchParams.get('id');
-  let data = SAMPLE;
+  const params = new URL(req.url).searchParams;
+  const id = params.get('id');
+  let data: TicketEmailData =
+    params.get('mode') === 'online' ? { ...SAMPLE, attendanceMode: 'Online', joinUrl: zoomJoinUrl() } : SAMPLE;
   if (id) {
     const reg = await findById(id).catch(() => null);
     if (!reg) return NextResponse.json({ message: 'Registration not found.' }, { status: 404 });

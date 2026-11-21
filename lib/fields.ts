@@ -1,4 +1,4 @@
-import { AFFILIATIONS, AGE_GROUPS, SEXES, TOPICS } from './config';
+import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, SEXES, TOPICS } from './config';
 import {
   DEGREE_LEVELS,
   type DetailKey,
@@ -22,6 +22,7 @@ export const F = {
   organization: 'University/Organization',
   affiliation: 'Current Affiliation',
   affiliationOther: 'Current Affiliation (Other)',
+  attendanceMode: 'Attendance Mode',
   topics: 'Topics of Interest',
   topicsOther: 'Topics of Interest (Other)',
   question: 'Question for the Speaker',
@@ -157,6 +158,13 @@ export const FIELD_SPECS: FieldSpec[] = [
   },
   { name: F.affiliationOther, type: 'singleLineText', description: 'Filled in when the affiliation is "Other".' },
   ...DETAIL_SPECS,
+  {
+    name: F.attendanceMode,
+    type: 'singleSelect',
+    description:
+      'How will you join? Onsite registrants get a QR code for the door; Online registrants get the Zoom link. Empty = registered before the question was added (onsite).',
+    options: choices(ATTENDANCE_MODES, ['tealLight2', 'purpleLight2']),
+  },
   {
     name: F.topics,
     type: 'multipleSelects',

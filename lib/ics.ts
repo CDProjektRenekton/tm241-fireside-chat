@@ -7,13 +7,29 @@ const icsTime = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, ''
 
 export const inviteFileName = (ref: string) => `TM241-Fireside-Chat-${ref}.ics`;
 
-export function buildInvite({ ref, name, organization }: { ref: string; name: string; organization: string }) {
+/** Where the calendar entry says the event is: the venue, or for online registrants the Zoom link. */
+function locationFor(online: boolean, joinUrl?: string | null) {
+  if (!online) return venueFull();
+  return joinUrl ?? 'Online via Zoom (link sent by email)';
+}
+
+export interface InviteDetails {
+  ref: string;
+  name: string;
+  organization: string;
+  /** Online registrants: the Zoom link goes in the location and description. */
+  online?: boolean;
+  joinUrl?: string | null;
+}
+
+export function buildInvite({ ref, name, organization, online = false, joinUrl }: InviteDetails) {
   const description = [
     `${EVENT.series}: ${EVENT.title}`,
     EVENT.subtitle,
     '',
+    ...(online ? [joinUrl ? `Join on Zoom: ${joinUrl}` : 'Joining online: the Zoom link will be sent by email.', ''] : []),
     `Reference No.: ${ref}`,
-    `Registered: ${name}${organization ? ` (${organization})` : ''}`,
+    `Registered: ${name}${organization ? ` (${organization})` : ''}${online ? ' · joining online' : ''}`,
     `Organizer: ${EVENT.organizer}`,
   ].join('\n');
   const lines = [
@@ -28,7 +44,8 @@ export function buildInvite({ ref, name, organization }: { ref: string; name: st
     `DTSTART:${icsTime(EVENT.startsAt)}`,
     `DTEND:${icsTime(EVENT.endsAt)}`,
     `SUMMARY:${icsText(`${EVENT.series}: ${EVENT.title}`)}`,
-    `LOCATION:${icsText(venueFull())}`,
+    `LOCATION:${icsText(locationFor(online, joinUrl))}`,
+    ...(online && joinUrl ? [`URL:${joinUrl}`] : []),
     `DESCRIPTION:${icsText(description)}`,
     'BEGIN:VALARM',
     'TRIGGER:-P1D',
@@ -41,14 +58,15 @@ export function buildInvite({ ref, name, organization }: { ref: string; name: st
   return `${lines.join('\r\n')}\r\n`;
 }
 
-/** "Add to Google Calendar" link — event details only, nothing about the registrant. */
-export function googleCalendarUrl(siteUrl: string) {
+/** "Add to Google Calendar" link — event details only (plus the Zoom link for online registrants). */
+export function googleCalendarUrl(siteUrl: string, online = false, joinUrl?: string | null) {
+  const zoom = online ? (joinUrl ? `Join on Zoom: ${joinUrl}\n\n` : 'Joining online: the Zoom link will be sent by email.\n\n') : '';
   const q = new URLSearchParams({
     action: 'TEMPLATE',
     text: `${EVENT.series}: ${EVENT.title}`,
     dates: `${icsTime(EVENT.startsAt)}/${icsTime(EVENT.endsAt)}`,
-    details: `${EVENT.subtitle}\n\nOrganized by the ${EVENT.organizer}\n${siteUrl}`,
-    location: venueFull(),
+    details: `${zoom}${EVENT.subtitle}\n\nOrganized by the ${EVENT.organizer}\n${siteUrl}`,
+    location: locationFor(online, joinUrl),
   });
   return `https://calendar.google.com/calendar/render?${q}`;
 }
