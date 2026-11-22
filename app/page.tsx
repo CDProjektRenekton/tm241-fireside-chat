@@ -62,7 +62,6 @@ export default function Home() {
                 <ZoomLogo size={30} />
                 <span>
                   <b>Online via Zoom</b>
-                  <small>Join live from anywhere</small>
                 </span>
               </li>
             </ul>
