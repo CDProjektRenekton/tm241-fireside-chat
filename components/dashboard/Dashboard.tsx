@@ -33,6 +33,7 @@ import {
   Search,
   Sheet,
 } from '../Icons';
+import AnnouncementCard from './AnnouncementCard';
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import PrintReport from './PrintReport';
 import QuestionWall from './QuestionWall';
@@ -563,6 +564,8 @@ export default function Dashboard() {
               </header>
               <ResponsesTable rows={filtered} dupKeys={dupKeys} showAll={false} />
             </section>
+
+            <AnnouncementCard />
           </>
         )}
 

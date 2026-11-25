@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { findById } from '@/lib/airtable';
 import { isAuthenticated } from '@/lib/auth';
 import { previewTicketEmail, siteUrl, ticketDataFrom } from '@/lib/email/send';
-import type { TicketEmailData } from '@/lib/email/template';
+import { NEW_TIME, type TicketEmailData } from '@/lib/email/template';
 import { zoomJoinUrl } from '@/lib/zoom';
 
 export const runtime = 'nodejs';
@@ -21,7 +21,7 @@ const SAMPLE: TicketEmailData = {
 /**
  * The confirmation email as a web page, for organizers: /api/email/preview shows it with sample
  * details (?mode=online for the online version), /api/email/preview?id=rec… with a real
- * registrant's. Dashboard sign-in required.
+ * registrant's. Add notice=new-time for the "new time" announcement. Dashboard sign-in required.
  */
 export async function GET(req: Request) {
   if (!(await isAuthenticated())) {
@@ -36,7 +36,8 @@ export async function GET(req: Request) {
     if (!reg) return NextResponse.json({ message: 'Registration not found.' }, { status: 404 });
     data = ticketDataFrom(reg);
   }
-  const { subject, html } = await previewTicketEmail(data, siteUrl(req));
+  const notice = params.get('notice') === 'new-time' ? NEW_TIME : undefined;
+  const { subject, html } = await previewTicketEmail(data, siteUrl(req), notice);
   // Show the subject line above the email, the way a mail app would.
   const banner = `<div style="font:13px/1.5 system-ui,sans-serif;color:#b8c3e6;background:#0d1140;padding:10px 16px;border-bottom:1px solid #2b3a78">
     <b style="color:#fff">Email preview</b>${id ? '' : ' (sample details)'} &middot; Subject: ${subject.replace(/</g, '&lt;')}</div>`;

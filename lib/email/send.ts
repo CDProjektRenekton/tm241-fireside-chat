@@ -9,7 +9,7 @@ import { buildInvite, inviteFileName } from '../ics';
 import type { Registration } from '../types';
 import { zoomJoinUrl } from '../zoom';
 import { qrPng } from './qr-png';
-import { emailImagesFor, isOnline, renderTicketEmail, type EmailImage, type TicketEmailData } from './template';
+import { emailImagesFor, isOnline, renderTicketEmail, type EmailImage, type TicketEmailData, type TimeNotice } from './template';
 
 /**
  * The confirmation email goes out through any SMTP mail account. Gmail is the default:
@@ -96,14 +96,17 @@ const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> =
   'icon-video': { file: 'icon-video.png', type: 'image/png' },
   /** The Zoom app logo (2x), inside the Join on Zoom button. */
   zoom: { file: 'zoom.png', type: 'image/png' },
+  /** Headers of the "new time" announcement (onsite, online). */
+  'hero-new-time': { file: 'hero-new-time.jpg', type: 'image/jpeg' },
+  'hero-new-time-online': { file: 'hero-new-time-online.jpg', type: 'image/jpeg' },
 };
 const art = new Map<string, Buffer>();
 
 /** The images this email uses — only those are attached. */
-async function images(d: TicketEmailData) {
+async function images(d: TicketEmailData, notice?: TimeNotice) {
   const out = {} as Record<EmailImage, { content: Buffer; type: string; file: string }>;
   const ref = d.ref;
-  for (const name of emailImagesFor(d)) {
+  for (const name of emailImagesFor(d, notice)) {
     if (name === 'qr') {
       out.qr = { content: qrPng(ref), type: 'image/png', file: `${ref}.png` };
       continue;
@@ -139,12 +142,12 @@ export function ticketDataFrom(
   };
 }
 
-/** Sends the boarding-pass email. Throws when the mail server refuses it. */
-export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?: string }) {
+/** Sends the boarding-pass email (or, with a notice, the announcement). Throws when the mail server refuses it. */
+export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?: string; notice?: TimeNotice }) {
   const s = settings();
   if (!emailConfigured()) throw new EmailNotConfigured();
-  const img = await images(d);
-  const { subject, html, text } = renderTicketEmail(d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` });
+  const img = await images(d, opts.notice);
+  const { subject, html, text } = renderTicketEmail(d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` }, opts.notice);
   const message: SendMailOptions = {
     from: s.from,
     to: opts.to ?? { name: d.name, address: d.email },
@@ -153,7 +156,7 @@ export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: strin
     html,
     text,
     attachments: [
-      ...emailImagesFor(d).map((n) => ({
+      ...emailImagesFor(d, opts.notice).map((n) => ({
         filename: img[n].file,
         content: img[n].content,
         contentType: img[n].type,
@@ -203,12 +206,16 @@ export function queueTicketEmail(d: TicketEmailData, req: Request) {
 }
 
 /** HTML for the dashboard's preview: same email, with the images inlined. */
-export async function previewTicketEmail(d: TicketEmailData, url: string) {
-  const img = await images(d);
-  return renderTicketEmail(d, {
-    siteUrl: url,
-    src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
-  });
+export async function previewTicketEmail(d: TicketEmailData, url: string, notice?: TimeNotice) {
+  const img = await images(d, notice);
+  return renderTicketEmail(
+    d,
+    {
+      siteUrl: url,
+      src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
+    },
+    notice,
+  );
 }
 
 export class EmailNotConfigured extends Error {
