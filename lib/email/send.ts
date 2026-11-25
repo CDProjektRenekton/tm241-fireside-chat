@@ -224,10 +224,28 @@ export class EmailNotConfigured extends Error {
   }
 }
 
+type MailError = { code?: string; responseCode?: number; message?: string; response?: string };
+const overLimit = (err: MailError) => /\b5\.4\.5\b|sending limit|too many (messages|recipients|login)/i.test(`${err.response ?? ''} ${err.message ?? ''}`);
+
+/**
+ * True when the mail account itself is the problem (sign-in, connection, daily limit), so trying the
+ * next person would fail the same way. False when only this one address was refused.
+ */
+export function stopsSending(e: unknown) {
+  if (e instanceof EmailNotConfigured) return true;
+  const err = e as MailError;
+  return (
+    overLimit(err) ||
+    ['EAUTH', 'ETIMEDOUT', 'ECONNECTION', 'ESOCKET', 'EDNS'].includes(err.code ?? '') ||
+    [421, 450, 451, 452, 454, 534, 535].includes(err.responseCode ?? 0)
+  );
+}
+
 /** A message an organizer can act on, without echoing anything secret. */
 export function describeEmailError(e: unknown) {
   if (e instanceof EmailNotConfigured) return e.message;
-  const err = e as { code?: string; responseCode?: number; message?: string };
+  const err = e as MailError;
+  if (overLimit(err)) return 'The mail account reached its sending limit for now. Try again later (Gmail resets within 24 hours).';
   if (err.code === 'EAUTH' || err.responseCode === 535 || err.responseCode === 534)
     return 'The mail server rejected the sign-in. Check SMTP_USER and SMTP_PASS (for Gmail, use an App password, not the normal password).';
   if (err.code === 'ETIMEDOUT' || err.code === 'ECONNECTION' || err.code === 'ESOCKET' || err.code === 'EDNS')

@@ -1,5 +1,5 @@
 import 'server-only';
-import { F, F_DETAIL, FIELD_SPECS } from './fields';
+import { F, F_DETAIL, FIELD_SPECS, type NewTimeEmailState } from './fields';
 import { DETAIL_KEYS, type RoleDetails } from './roles';
 import type { Registration, SchemaStatus } from './types';
 
@@ -260,6 +260,7 @@ function toRegistration(r: AirtableRecord): Registration {
     consent: str(f[F.consent]),
     attended: f[F.attended] === true,
     checkedInAt: str(f[F.checkedInAt]),
+    newTimeEmail: str(f[F.newTimeEmail]),
   };
 }
 
@@ -308,6 +309,28 @@ export async function setAttendance(id: string, attended: boolean): Promise<Regi
     if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
     const report = await ensureSchema();
     return toRegistration(await patch(report.tableId));
+  }
+}
+
+/**
+ * Records where the "new time" announcement stands for up to 10 registrations (null clears it).
+ * Creates the column first if it is missing.
+ */
+export async function markNewTimeEmail(ids: string[], state: NewTimeEmailState | null): Promise<void> {
+  if (!ids.length) return;
+  if (ids.length > 10 || ids.some((id) => !RECORD_ID.test(id))) throw new AirtableError(400, 'BAD_IDS', 'Bad record list.');
+  const { baseId, table } = config();
+  const patch = (tableKey: string) =>
+    request(`/${baseId}/${encodeURIComponent(tableKey)}`, {
+      method: 'PATCH',
+      body: { records: ids.map((id) => ({ id, fields: { [F.newTimeEmail]: state } })) },
+    });
+  try {
+    await patch(table);
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    const report = await ensureSchema();
+    await patch(report.tableId);
   }
 }
 

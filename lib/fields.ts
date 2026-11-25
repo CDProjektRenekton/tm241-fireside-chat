@@ -30,6 +30,7 @@ export const F = {
   consent: 'Data Privacy Consent',
   attended: 'Attended',
   checkedInAt: 'Checked In At',
+  newTimeEmail: 'New Time Email',
 } as const;
 
 /** Columns for the follow-up questions under "Current Affiliation" (see lib/roles.ts). */
@@ -53,6 +54,10 @@ export const F_DETAIL: Record<DetailKey, string> = {
   designation: 'Designation',
   years: 'Years of Experience',
 };
+
+/** Values of "New Time Email". Empty = not sent. */
+export const NEW_TIME_EMAIL_STATES = ['Sending', 'Sent', 'Failed'] as const;
+export type NewTimeEmailState = (typeof NEW_TIME_EMAIL_STATES)[number];
 
 export interface FieldSpec {
   name: string;
@@ -192,5 +197,12 @@ export const FIELD_SPECS: FieldSpec[] = [
     type: 'dateTime',
     description: 'When the ticket was scanned at the check-in desk (Philippine time).',
     options: { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' },
+  },
+  {
+    name: F.newTimeEmail,
+    type: 'singleSelect',
+    description:
+      'The "new time" announcement, set by the dashboard so nobody gets it twice. Sending = started but not confirmed; Failed = the mail server refused the address.',
+    options: choices(NEW_TIME_EMAIL_STATES, ['yellowLight2', 'greenLight2', 'redLight2']),
   },
 ];

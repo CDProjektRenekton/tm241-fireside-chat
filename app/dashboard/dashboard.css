@@ -492,6 +492,57 @@ a.head-btn {
   white-space: normal;
 }
 
+.announce-card .announce-step {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.announce-count {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.announce-notes {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.announce-confirm {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 112, 124, 0.55);
+  background: rgba(232, 71, 90, 0.1);
+}
+
+.announce-confirm p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.announce-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-size: 14px;
+}
+
+.announce-progress progress {
+  width: 220px;
+  height: 8px;
+  accent-color: var(--cyan-400);
+}
+
+.announce-refs {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  word-break: break-word;
+}
+
 .filter-search {
   flex: 1 1 220px;
 }
