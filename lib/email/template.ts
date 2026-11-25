@@ -211,7 +211,7 @@ export function renderTicketEmail(d: TicketEmailData, o: RenderOptions, notice?:
     <p style="margin:14px 0 0;font-size:16px;line-height:25px;color:${C.ink2};">
       ${
         notice
-          ? `The <b style="color:${C.ink};">${esc(EVENT.series)}</b> will start <b style="color:${C.ink};">${esc(notice.moved)}</b> than we first announced. Your registration still stands, so there&rsquo;s no need to register again. We&rsquo;re sorry for the short notice, and thank you for adjusting with us.`
+          ? `The <b style="color:${C.ink};">${esc(EVENT.series)}</b> will start <b style="color:${C.ink};">${esc(notice.moved)}</b> than we first announced. Your registration still stands, so there&rsquo;s no need to register again. We&rsquo;re sorry for the short notice, and we hope you can still join us!`
           : online
           ? `Your seat at the <b style="color:${C.ink};">${esc(EVENT.series)}</b> is confirmed &mdash; you&rsquo;re joining online. ${
               joinUrl
@@ -406,7 +406,7 @@ ${
           `Was: ${notice.wasTime}`,
           `Now: ${EVENT.time}, ${EVENT.weekday}, ${EVENT.dateEn} (Philippine time)`,
           '',
-          "Your registration still stands, so there's no need to register again. We're sorry for the short notice, and thank you for adjusting with us.",
+          "Your registration still stands, so there's no need to register again. We're sorry for the short notice, and we hope you can still join us!",
           online
             ? joinUrl
               ? 'What stays the same: the date, your Zoom link and your reference number.'
