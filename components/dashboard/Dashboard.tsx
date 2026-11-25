@@ -26,6 +26,7 @@ import {
   Database,
   FileText,
   LogOut,
+  Mail,
   Message,
   Printer,
   Refresh,
@@ -33,7 +34,6 @@ import {
   Search,
   Sheet,
 } from '../Icons';
-import AnnouncementCard from './AnnouncementCard';
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import PrintReport from './PrintReport';
 import QuestionWall from './QuestionWall';
@@ -185,6 +185,10 @@ export default function Dashboard() {
             <a className="head-btn" href="/checkin">
               <ScanQr width={18} height={18} />
               Check-in desk
+            </a>
+            <a className="head-btn" href="/dashboard/updates">
+              <Mail width={18} height={18} />
+              Email updates
             </a>
             <button type="button" className="head-btn" onClick={() => void copyFormLink()}>
               {linkCopied ? <Check width={18} height={18} /> : <Copy width={18} height={18} />}
@@ -564,8 +568,6 @@ export default function Dashboard() {
               </header>
               <ResponsesTable rows={filtered} dupKeys={dupKeys} showAll={false} />
             </section>
-
-            <AnnouncementCard />
           </>
         )}
 

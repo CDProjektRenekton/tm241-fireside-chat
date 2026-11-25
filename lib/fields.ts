@@ -10,6 +10,7 @@ import {
   WORK_STATUSES,
   YEAR_LEVELS,
 } from './roles';
+import { AUDIENCES, UPDATE_STATUSES } from './updates';
 
 /** Airtable column names. Renaming a column in Airtable requires renaming it here too. */
 export const F = {
@@ -30,7 +31,7 @@ export const F = {
   consent: 'Data Privacy Consent',
   attended: 'Attended',
   checkedInAt: 'Checked In At',
-  newTimeEmail: 'New Time Email',
+  emailLog: 'Email Log',
 } as const;
 
 /** Columns for the follow-up questions under "Current Affiliation" (see lib/roles.ts). */
@@ -54,10 +55,6 @@ export const F_DETAIL: Record<DetailKey, string> = {
   designation: 'Designation',
   years: 'Years of Experience',
 };
-
-/** Values of "New Time Email". Empty = not sent. */
-export const NEW_TIME_EMAIL_STATES = ['Sending', 'Sent', 'Failed'] as const;
-export type NewTimeEmailState = (typeof NEW_TIME_EMAIL_STATES)[number];
 
 export interface FieldSpec {
   name: string;
@@ -199,10 +196,64 @@ export const FIELD_SPECS: FieldSpec[] = [
     options: { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' },
   },
   {
-    name: F.newTimeEmail,
-    type: 'singleSelect',
+    name: F.emailLog,
+    type: 'multilineText',
     description:
-      'The "new time" announcement, set by the dashboard so nobody gets it twice. Sending = started but not confirmed; Failed = the mail server refused the address.',
-    options: choices(NEW_TIME_EMAIL_STATES, ['yellowLight2', 'greenLight2', 'redLight2']),
+      'Email updates this registration has had, one per line (e.g. "UPD-7KQ2MX Sent"). Kept by the Email updates page so nobody gets an update twice — please do not edit.',
   },
+];
+
+// ---------------------------------------------------------------- the Email Updates table
+
+export const UPDATES_TABLE = 'Email Updates';
+
+/** Column names of the Email Updates table (one row per update organizers write). */
+export const U = {
+  code: 'Update ID',
+  status: 'Status',
+  subject: 'Subject',
+  headline: 'Headline',
+  message: 'Message',
+  before: 'Was',
+  now: 'Now',
+  buttonLabel: 'Button Words',
+  buttonUrl: 'Button Link',
+  audience: 'Audience',
+  includePass: 'Include Boarding Pass',
+  attachInvite: 'Attach Calendar Invite',
+  createdAt: 'Created At',
+  sentAt: 'Sent At',
+  people: 'People Emailed',
+} as const;
+
+const MANILA_TIME = { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' };
+const CHECK = { icon: 'check', color: 'greenBright' };
+
+/** Email Updates schema, in column order. The first entry is the primary field. */
+export const UPDATE_SPECS: FieldSpec[] = [
+  { name: U.code, type: 'singleLineText', description: 'Made by the Email updates page; also written in each registration\'s Email Log.' },
+  {
+    name: U.status,
+    type: 'singleSelect',
+    description: 'Draft = can still be edited. Sending = started. Sent = everyone in the audience has had it.',
+    options: choices(UPDATE_STATUSES, ['grayLight2', 'yellowLight2', 'greenLight2', 'redLight2']),
+  },
+  text(U.subject, 'Subject line.'),
+  text(U.headline, 'Big heading in the email.'),
+  { name: U.message, type: 'multilineText', description: 'The message, as written.' },
+  text(U.before, 'Optional: the old value in the Was/Now box.'),
+  text(U.now, 'Optional: the new value in the Was/Now box.'),
+  text(U.buttonLabel, 'Optional: words on the button.'),
+  { name: U.buttonUrl, type: 'url', description: 'Optional: the link the button opens.' },
+  {
+    name: U.audience,
+    type: 'singleSelect',
+    description: 'Who it goes to (one email per address).',
+    options: choices(AUDIENCES, ['blueLight2', 'tealLight2', 'purpleLight2', 'greenLight2']),
+  },
+  { name: U.includePass, type: 'checkbox', options: CHECK },
+  { name: U.attachInvite, type: 'checkbox', options: CHECK },
+  { name: U.createdAt, type: 'dateTime', options: MANILA_TIME },
+  { name: U.sentAt, type: 'dateTime', description: 'When the first email of this update went out.', options: MANILA_TIME },
+  { name: U.people, type: 'number', description: 'People emailed so far.', options: { precision: 0 } },
 ];

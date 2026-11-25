@@ -52,8 +52,8 @@ export interface Registration extends RoleDetails {
   /** Ticked by the check-in desk when the ticket is scanned at the event. */
   attended: boolean;
   checkedInAt: string;
-  /** Whether the "new time" announcement went to this registration: "", "Sending", "Sent" or "Failed". */
-  newTimeEmail: string;
+  /** Email updates this registration has had, one per line (see lib/updates.ts). */
+  emailLog: string;
 }
 
 /** What the check-in desk sees about a registrant — no email, questions or other answers. */

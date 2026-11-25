@@ -48,6 +48,24 @@ The camera runs in the browser and needs HTTPS (Vercel provides it). Chrome on A
 built-in QR reader; iPhones, Windows and Firefox use the bundled jsQR decoder. Attendance also appears on
 the dashboard (a **Checked in** figure, an **Attendance** filter and badges in the table) and in every export.
 
+## Email updates (`/dashboard/updates`)
+
+For organizers (dashboard password): write an update and email it to registrants, e.g. a reminder, a change
+of time or venue, the Zoom link, or a thank-you with a feedback link. **Nothing is sent until you confirm**
+the number of people.
+
+1. Pick a starting point and change any of the words. The message takes **bold**, bullets, links, `{name}`
+   and `{ref}`; there is an optional Was/Now box and an optional button.
+2. Choose who gets it (**Everyone**, **Onsite**, **Online** or **Checked in**) and whether to include their
+   boarding pass and the calendar invite. The preview shows both versions, on desktop and phone.
+3. **Send test** emails a sample to one address. **Review and send** shows who and how many, then asks.
+
+It sends one email per address (the latest registration), a few at a time, with **Pause**. Drafts and sent
+updates are kept in the Airtable table **Email Updates**; each registration's **Email Log** notes what it has
+had, so nobody gets the same update twice, even if the page closes or two organizers press send. If Gmail's
+daily limit is reached it stops and the rest stay in line. Once an update has started going out its words are
+locked; use it as a new draft instead.
+
 ## Confirmation email
 
 When someone registers, the site emails them their boarding pass: the galaxy header artwork, their name,

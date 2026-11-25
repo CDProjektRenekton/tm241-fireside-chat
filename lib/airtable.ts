@@ -1,7 +1,10 @@
 import 'server-only';
-import { F, F_DETAIL, FIELD_SPECS, type NewTimeEmailState } from './fields';
+import { randomInt } from 'node:crypto';
+import { F, F_DETAIL, FIELD_SPECS, U, UPDATE_SPECS, UPDATES_TABLE } from './fields';
 import { DETAIL_KEYS, type RoleDetails } from './roles';
+import { REF_ALPHABET } from './ticket';
 import type { Registration, SchemaStatus } from './types';
+import { AUDIENCES, normalizeUpdate, UPDATE_STATUSES, type EmailUpdate, type UpdateContent, type UpdateStatus } from './updates';
 
 const API = 'https://api.airtable.com/v0';
 export const DEFAULT_TABLE_NAME = 'Fireside Chat Registrations';
@@ -120,18 +123,52 @@ interface MetaTable {
   fields: MetaField[];
 }
 
-async function findTable() {
-  const { baseId, table } = config();
-  const { tables } = await request<{ tables: MetaTable[] }>(`/meta/bases/${baseId}/tables`);
+async function allTables() {
+  const { tables } = await request<{ tables: MetaTable[] }>(`/meta/bases/${config().baseId}/tables`);
+  return tables;
+}
+
+function registrationsTable(tables: MetaTable[]) {
+  const { table } = config();
   return tables.find((t) => t.id === table || t.name === table) ?? tables.find((t) => t.name === DEFAULT_TABLE_NAME);
+}
+
+/** Columns the Email Updates table still needs (or the table itself). */
+function missingUpdateColumns(tables: MetaTable[]) {
+  const t = tables.find((x) => x.name === UPDATES_TABLE);
+  if (!t) return [`${UPDATES_TABLE} (table)`];
+  const names = new Set(t.fields.map((f) => f.name));
+  return UPDATE_SPECS.filter((s) => !names.has(s.name)).map((s) => `${UPDATES_TABLE}: ${s.name}`);
+}
+
+/** Creates the Email Updates table, or any columns it is missing. Safe to run repeatedly. */
+async function ensureUpdatesTable(tables: MetaTable[]): Promise<string[]> {
+  const { baseId } = config();
+  const t = tables.find((x) => x.name === UPDATES_TABLE);
+  if (!t) {
+    await request(`/meta/bases/${baseId}/tables`, {
+      method: 'POST',
+      body: { name: UPDATES_TABLE, description: 'Email updates written on the dashboard (Email updates page): drafts and what was sent.', fields: UPDATE_SPECS },
+    });
+    return [`${UPDATES_TABLE} (table)`];
+  }
+  const names = new Set(t.fields.map((f) => f.name));
+  const created: string[] = [];
+  for (const spec of UPDATE_SPECS) {
+    if (names.has(spec.name)) continue;
+    await request(`/meta/bases/${baseId}/tables/${t.id}/fields`, { method: 'POST', body: spec });
+    created.push(`${UPDATES_TABLE}: ${spec.name}`);
+  }
+  return created;
 }
 
 export async function getSchemaStatus(): Promise<SchemaStatus> {
   try {
-    const t = await findTable();
+    const tables = await allTables();
+    const t = registrationsTable(tables);
     if (!t) return { ok: false, missing: FIELD_SPECS.map((f) => f.name) };
     const names = new Set(t.fields.map((f) => f.name));
-    const missing = FIELD_SPECS.filter((f) => !names.has(f.name)).map((f) => f.name);
+    const missing = [...FIELD_SPECS.filter((f) => !names.has(f.name)).map((f) => f.name), ...missingUpdateColumns(tables)];
     return { ok: missing.length === 0, tableName: t.name, missing };
   } catch (e) {
     return { ok: true, missing: [], error: e instanceof Error ? e.message : String(e) };
@@ -154,7 +191,8 @@ export interface SetupReport {
  */
 export async function ensureSchema(): Promise<SetupReport> {
   const { baseId, table } = config();
-  const existing = await findTable();
+  const tables = await allTables();
+  const existing = registrationsTable(tables);
 
   if (!existing) {
     const name = table.startsWith('tbl') ? DEFAULT_TABLE_NAME : table;
@@ -170,7 +208,7 @@ export async function ensureSchema(): Promise<SetupReport> {
       tableId: created.id,
       tableName: created.name,
       createdTable: true,
-      createdFields: FIELD_SPECS.map((f) => f.name),
+      createdFields: [...FIELD_SPECS.map((f) => f.name), ...(await ensureUpdatesTable(tables))],
       typeMismatches: [],
     };
   }
@@ -204,6 +242,7 @@ export async function ensureSchema(): Promise<SetupReport> {
     await request(`/meta/bases/${baseId}/tables/${existing.id}/fields`, { method: 'POST', body: spec });
     report.createdFields.push(spec.name);
   }
+  report.createdFields.push(...(await ensureUpdatesTable(tables)));
   return report;
 }
 
@@ -260,7 +299,7 @@ function toRegistration(r: AirtableRecord): Registration {
     consent: str(f[F.consent]),
     attended: f[F.attended] === true,
     checkedInAt: str(f[F.checkedInAt]),
-    newTimeEmail: str(f[F.newTimeEmail]),
+    emailLog: str(f[F.emailLog]),
   };
 }
 
@@ -312,18 +351,15 @@ export async function setAttendance(id: string, attended: boolean): Promise<Regi
   }
 }
 
-/**
- * Records where the "new time" announcement stands for up to 10 registrations (null clears it).
- * Creates the column first if it is missing.
- */
-export async function markNewTimeEmail(ids: string[], state: NewTimeEmailState | null): Promise<void> {
-  if (!ids.length) return;
-  if (ids.length > 10 || ids.some((id) => !RECORD_ID.test(id))) throw new AirtableError(400, 'BAD_IDS', 'Bad record list.');
+/** Writes the Email Log of up to 10 registrations. Creates the column first if it is missing. */
+export async function saveEmailLogs(logs: { id: string; log: string }[]): Promise<void> {
+  if (!logs.length) return;
+  if (logs.length > 10 || logs.some((l) => !RECORD_ID.test(l.id))) throw new AirtableError(400, 'BAD_IDS', 'Bad record list.');
   const { baseId, table } = config();
   const patch = (tableKey: string) =>
     request(`/${baseId}/${encodeURIComponent(tableKey)}`, {
       method: 'PATCH',
-      body: { records: ids.map((id) => ({ id, fields: { [F.newTimeEmail]: state } })) },
+      body: { records: logs.map((l) => ({ id: l.id, fields: { [F.emailLog]: l.log } })) },
     });
   try {
     await patch(table);
@@ -353,3 +389,105 @@ export async function listRegistrations(): Promise<Registration[]> {
   } while (offset);
   return out.sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1));
 }
+
+// ---------------------------------------------------------------- email updates
+
+const UPDATES_PATH = encodeURIComponent(UPDATES_TABLE);
+
+function toUpdate(r: AirtableRecord): EmailUpdate {
+  const f = r.fields;
+  return {
+    ...normalizeUpdate({
+      subject: f[U.subject],
+      headline: f[U.headline],
+      message: f[U.message],
+      before: f[U.before],
+      now: f[U.now],
+      buttonLabel: f[U.buttonLabel],
+      buttonUrl: f[U.buttonUrl],
+      audience: AUDIENCES.find((a) => a === f[U.audience]),
+      includePass: f[U.includePass] === true,
+      attachInvite: f[U.attachInvite] === true,
+    }),
+    id: r.id,
+    code: str(f[U.code]),
+    status: UPDATE_STATUSES.find((s) => s === f[U.status]) ?? 'Draft',
+    createdAt: str(f[U.createdAt]) || r.createdTime,
+    sentAt: str(f[U.sentAt]),
+  };
+}
+
+const updateFields = (c: UpdateContent): Fields => ({
+  [U.subject]: c.subject,
+  [U.headline]: c.headline,
+  [U.message]: c.message,
+  [U.before]: c.before,
+  [U.now]: c.now,
+  [U.buttonLabel]: c.buttonLabel,
+  [U.buttonUrl]: c.buttonUrl || null,
+  [U.audience]: c.audience,
+  [U.includePass]: c.includePass,
+  [U.attachInvite]: c.attachInvite,
+});
+
+/** Drafts and sent updates, newest first (discarded ones are left out). */
+export async function listUpdates(): Promise<EmailUpdate[]> {
+  const { baseId } = config();
+  const out: EmailUpdate[] = [];
+  let offset: string | undefined;
+  try {
+    do {
+      const q = new URLSearchParams({ pageSize: '100' });
+      if (offset) q.set('offset', offset);
+      const page = await request<{ records: AirtableRecord[]; offset?: string }>(`/${baseId}/${UPDATES_PATH}?${q}`);
+      out.push(...page.records.map(toUpdate).filter((u) => u.code && u.status !== 'Discarded'));
+      offset = page.offset;
+    } while (offset);
+  } catch (e) {
+    // The table is made when the first draft is saved; until then there is nothing to list.
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+  }
+  return out.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function getUpdate(id: string): Promise<EmailUpdate | null> {
+  if (!RECORD_ID.test(id)) return null;
+  try {
+    const u = toUpdate(await request<AirtableRecord>(`/${config().baseId}/${UPDATES_PATH}/${id}`));
+    return u.code ? u : null;
+  } catch (e) {
+    if (e instanceof AirtableError && (e.status === 404 || SELF_HEAL_ERRORS.has(e.type))) return null;
+    throw e;
+  }
+}
+
+export async function createUpdate(content: UpdateContent): Promise<EmailUpdate> {
+  let code = 'UPD-';
+  for (let i = 0; i < 6; i++) code += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
+  const insert = () =>
+    request<{ records: AirtableRecord[] }>(`/${config().baseId}/${UPDATES_PATH}`, {
+      method: 'POST',
+      body: { records: [{ fields: { ...updateFields(content), [U.code]: code, [U.status]: 'Draft', [U.createdAt]: new Date().toISOString() } }] },
+    });
+  try {
+    return toUpdate((await insert()).records[0]);
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    await ensureUpdatesTable(await allTables());
+    return toUpdate((await insert()).records[0]);
+  }
+}
+
+async function patchUpdate(id: string, fields: Fields): Promise<EmailUpdate> {
+  if (!RECORD_ID.test(id)) throw new AirtableError(404, 'NOT_FOUND', 'Unknown update.');
+  return toUpdate(await request<AirtableRecord>(`/${config().baseId}/${UPDATES_PATH}/${id}`, { method: 'PATCH', body: { fields } }));
+}
+
+export const saveUpdateContent = (id: string, content: UpdateContent) => patchUpdate(id, updateFields(content));
+
+export const setUpdateStatus = (id: string, status: UpdateStatus, more: { sentAt?: string; people?: number } = {}) =>
+  patchUpdate(id, {
+    [U.status]: status,
+    ...(more.sentAt ? { [U.sentAt]: more.sentAt } : {}),
+    ...(more.people !== undefined ? { [U.people]: more.people } : {}),
+  });

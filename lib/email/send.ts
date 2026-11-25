@@ -9,7 +9,10 @@ import { buildInvite, inviteFileName } from '../ics';
 import type { Registration } from '../types';
 import { zoomJoinUrl } from '../zoom';
 import { qrPng } from './qr-png';
-import { emailImagesFor, isOnline, renderTicketEmail, type EmailImage, type TicketEmailData, type TimeNotice } from './template';
+import type { UpdateContent } from '../updates';
+import { isOnline, type EmailImage, type TicketEmailData } from './parts';
+import { emailImagesFor, renderTicketEmail } from './template';
+import { renderUpdateEmail, updateImagesFor } from './update';
 
 /**
  * The confirmation email goes out through any SMTP mail account. Gmail is the default:
@@ -87,6 +90,8 @@ const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> =
   hero: { file: 'hero.jpg', type: 'image/jpeg' },
   /** The same header art for online registrants: "Online · Live on Zoom" and "See you online". */
   'hero-online': { file: 'hero-online.jpg', type: 'image/jpeg' },
+  /** Header for updates organizers write: no date, time or venue, so it never goes out of date. */
+  'hero-update': { file: 'hero-update.jpg', type: 'image/jpeg' },
   /** The event logo (transparent, 2x) for the boarding pass title; rendered from components/EventLogo.tsx. */
   logo: { file: 'logo.png', type: 'image/png' },
   'icon-calendar': { file: 'icon-calendar.png', type: 'image/png' },
@@ -96,17 +101,13 @@ const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> =
   'icon-video': { file: 'icon-video.png', type: 'image/png' },
   /** The Zoom app logo (2x), inside the Join on Zoom button. */
   zoom: { file: 'zoom.png', type: 'image/png' },
-  /** Headers of the "new time" announcement (onsite, online). */
-  'hero-new-time': { file: 'hero-new-time.jpg', type: 'image/jpeg' },
-  'hero-new-time-online': { file: 'hero-new-time-online.jpg', type: 'image/jpeg' },
 };
 const art = new Map<string, Buffer>();
 
-/** The images this email uses — only those are attached. */
-async function images(d: TicketEmailData, notice?: TimeNotice) {
+/** Loads the images one email uses — only those are attached. */
+async function images(names: EmailImage[], ref: string) {
   const out = {} as Record<EmailImage, { content: Buffer; type: string; file: string }>;
-  const ref = d.ref;
-  for (const name of emailImagesFor(d, notice)) {
+  for (const name of names) {
     if (name === 'qr') {
       out.qr = { content: qrPng(ref), type: 'image/png', file: `${ref}.png` };
       continue;
@@ -142,42 +143,59 @@ export function ticketDataFrom(
   };
 }
 
-/** Sends the boarding-pass email (or, with a notice, the announcement). Throws when the mail server refuses it. */
-export async function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?: string; notice?: TimeNotice }) {
+/** One email out: inline pictures, and the calendar invite when asked for. */
+async function deliver(
+  d: TicketEmailData,
+  mail: { subject: string; html: string; text: string },
+  opts: { images: EmailImage[]; invite: boolean; to?: string },
+) {
   const s = settings();
   if (!emailConfigured()) throw new EmailNotConfigured();
-  const img = await images(d, opts.notice);
-  const { subject, html, text } = renderTicketEmail(d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` }, opts.notice);
+  const img = await images(opts.images, d.ref);
   const message: SendMailOptions = {
     from: s.from,
     to: opts.to ?? { name: d.name, address: d.email },
     ...(s.replyTo ? { replyTo: s.replyTo } : {}),
-    subject,
-    html,
-    text,
+    ...mail,
     attachments: [
-      ...emailImagesFor(d, opts.notice).map((n) => ({
+      ...opts.images.map((n) => ({
         filename: img[n].file,
         content: img[n].content,
         contentType: img[n].type,
         cid: cid(n),
         contentDisposition: 'inline' as const,
       })),
-      {
-        filename: inviteFileName(d.ref),
-        content: buildInvite({
-          ref: d.ref,
-          name: d.name,
-          organization: d.organization,
-          online: isOnline(d),
-          joinUrl: d.joinUrl,
-        }),
-        contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
-      },
+      ...(opts.invite
+        ? [
+            {
+              filename: inviteFileName(d.ref),
+              content: buildInvite({
+                ref: d.ref,
+                name: d.name,
+                organization: d.organization,
+                online: isOnline(d),
+                joinUrl: d.joinUrl,
+              }),
+              contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+            },
+          ]
+        : []),
     ],
   };
   const info = await transport().sendMail(message);
   return { messageId: info.messageId as string | undefined };
+}
+
+/** Sends the boarding-pass email. Throws when the mail server refuses it. */
+export function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?: string }) {
+  const mail = renderTicketEmail(d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` });
+  return deliver(d, mail, { images: emailImagesFor(d), invite: true, to: opts.to });
+}
+
+/** Sends an update an organizer wrote to one person. Throws when the mail server refuses it. */
+export function sendUpdateEmail(u: UpdateContent, d: TicketEmailData, opts: { siteUrl: string; to?: string }) {
+  const mail = renderUpdateEmail(u, d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` });
+  return deliver(d, mail, { images: updateImagesFor(u, d), invite: u.attachInvite, to: opts.to });
 }
 
 /**
@@ -206,16 +224,23 @@ export function queueTicketEmail(d: TicketEmailData, req: Request) {
 }
 
 /** HTML for the dashboard's preview: same email, with the images inlined. */
-export async function previewTicketEmail(d: TicketEmailData, url: string, notice?: TimeNotice) {
-  const img = await images(d, notice);
-  return renderTicketEmail(
-    d,
-    {
-      siteUrl: url,
-      src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
-    },
-    notice,
-  );
+export async function previewTicketEmail(d: TicketEmailData, url: string) {
+  const img = await images(emailImagesFor(d), d.ref);
+  return renderTicketEmail(d, {
+    siteUrl: url,
+    src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
+  });
+}
+
+/**
+ * HTML of an update for the page's live preview: the pictures come from the site itself (only the
+ * sample QR code is inlined), so re-rendering on every edit stays light.
+ */
+export function previewUpdateEmail(u: UpdateContent, d: TicketEmailData, opts: { siteUrl: string; origin: string }) {
+  return renderUpdateEmail(u, d, {
+    siteUrl: opts.siteUrl,
+    src: (n) => (n === 'qr' ? `data:image/png;base64,${qrPng(d.ref).toString('base64')}` : `${opts.origin}/email/${FILES[n].file}`),
+  });
 }
 
 export class EmailNotConfigured extends Error {
