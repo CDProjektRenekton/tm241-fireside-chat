@@ -99,11 +99,16 @@
 }
 
 .feedback-page .callout {
-  margin-top: 0;
+  margin: 0 0 20px;
+}
+
+.feedback-done .callout {
+  margin: 14px 0 0;
+  text-align: left;
 }
 
 .feedback-page form .callout {
-  margin-top: 18px;
+  margin: 18px 0 0;
 }
 
 .feedback-closed {

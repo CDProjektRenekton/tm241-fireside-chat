@@ -303,6 +303,8 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
                 <>
                   We emailed it to <b>{c.recently}</b> a few minutes ago. Please check Promotions or Spam.
                 </>
+              ) : c.preview ? (
+                'Not emailed: a try-out only emails an address typed into the first question.'
               ) : (
                 'We couldn’t email it just now, so please download it here.'
               )}
