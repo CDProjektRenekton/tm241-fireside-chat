@@ -190,6 +190,10 @@ export default function Dashboard() {
               <Mail width={18} height={18} />
               Email updates
             </a>
+            <a className="head-btn" href="/feedback" target="_blank" rel="noopener">
+              <ClipboardList width={18} height={18} />
+              Feedback form
+            </a>
             <button type="button" className="head-btn" onClick={() => void copyFormLink()}>
               {linkCopied ? <Check width={18} height={18} /> : <Copy width={18} height={18} />}
               {linkCopied ? 'Link copied' : 'Copy form link'}

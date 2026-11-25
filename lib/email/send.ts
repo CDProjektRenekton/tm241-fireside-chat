@@ -6,12 +6,14 @@ import nodemailer from 'nodemailer';
 import type { SendMailOptions, Transporter } from 'nodemailer';
 import { EVENT } from '../config';
 import { buildInvite, inviteFileName } from '../ics';
+import { certificateFileName } from '../certificate';
 import type { Registration } from '../types';
 import { zoomJoinUrl } from '../zoom';
 import { qrPng } from './qr-png';
 import type { UpdateContent } from '../updates';
 import { isOnline, type EmailImage, type TicketEmailData } from './parts';
 import { emailImagesFor, renderTicketEmail } from './template';
+import { CERTIFICATE_IMAGES, renderCertificateEmail, type CertificateEmailData } from './certificate';
 import { renderUpdateEmail, updateImagesFor } from './update';
 
 /**
@@ -92,6 +94,8 @@ const FILES: Record<Exclude<EmailImage, 'qr'>, { file: string; type: string }> =
   'hero-online': { file: 'hero-online.jpg', type: 'image/jpeg' },
   /** Header for updates organizers write: no date, time or venue, so it never goes out of date. */
   'hero-update': { file: 'hero-update.jpg', type: 'image/jpeg' },
+  /** Header of the certificate email. */
+  'hero-thanks': { file: 'hero-thanks.jpg', type: 'image/jpeg' },
   /** The event logo (transparent, 2x) for the boarding pass title; rendered from components/EventLogo.tsx. */
   logo: { file: 'logo.png', type: 'image/png' },
   'icon-calendar': { file: 'icon-calendar.png', type: 'image/png' },
@@ -147,7 +151,7 @@ export function ticketDataFrom(
 async function deliver(
   d: TicketEmailData,
   mail: { subject: string; html: string; text: string },
-  opts: { images: EmailImage[]; invite: boolean; to?: string },
+  opts: { images: EmailImage[]; invite: boolean; to?: string; files?: { filename: string; content: Buffer; contentType: string }[] },
 ) {
   const s = settings();
   if (!emailConfigured()) throw new EmailNotConfigured();
@@ -180,6 +184,7 @@ async function deliver(
             },
           ]
         : []),
+      ...(opts.files ?? []),
     ],
   };
   const info = await transport().sendMail(message);
@@ -196,6 +201,14 @@ export function sendTicketEmail(d: TicketEmailData, opts: { siteUrl: string; to?
 export function sendUpdateEmail(u: UpdateContent, d: TicketEmailData, opts: { siteUrl: string; to?: string }) {
   const mail = renderUpdateEmail(u, d, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` });
   return deliver(d, mail, { images: updateImagesFor(u, d), invite: u.attachInvite, to: opts.to });
+}
+
+/** Sends the Certificate of Participation, with the PDF attached. Throws when the mail server refuses it. */
+export function sendCertificateEmail(c: CertificateEmailData, pdf: Buffer, opts: { siteUrl: string }) {
+  const d: TicketEmailData = { ref: c.number, name: c.name, email: c.email, organization: '', affiliation: '' };
+  const file = certificateFileName(c.name);
+  const mail = renderCertificateEmail(c, { siteUrl: opts.siteUrl, src: (n) => `cid:${cid(n)}` }, file);
+  return deliver(d, mail, { images: CERTIFICATE_IMAGES, invite: false, files: [{ filename: file, content: pdf, contentType: 'application/pdf' }] });
 }
 
 /**

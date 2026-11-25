@@ -92,6 +92,8 @@ export function renderUpdateEmail(u: UpdateContent, d: TicketEmailData, o: Rende
   const subject = personalize(u.subject, d);
   const headline = personalize(u.headline, d);
   const message = personalize(u.message, d);
+  // {ref} in a link makes it personal, e.g. the feedback form with their details filled in.
+  const buttonUrl = u.buttonUrl.replace(/\{name\}/gi, () => encodeURIComponent(greetingName(d.name))).replace(/\{ref\}/gi, () => encodeURIComponent(d.ref));
   const calendarUrl = googleCalendarUrl(o.siteUrl, online, joinUrl || null);
   const preheader = messageText(message).replace(/\s+/g, ' ').slice(0, 150);
   const directions = u.includePass && !online;
@@ -123,10 +125,10 @@ export function renderUpdateEmail(u: UpdateContent, d: TicketEmailData, o: Rende
     </table>
   </td></tr>`
       : '',
-    u.buttonLabel && u.buttonUrl
+    u.buttonLabel && buttonUrl
       ? `  <!-- button -->
   <tr><td class="px" align="center" style="padding:24px 28px 0;background:${C.card};font-family:${BODY};" bgcolor="${C.card}">
-    <a class="btn" href="${esc(u.buttonUrl)}" target="_blank" style="display:inline-block;margin:6px;padding:15px 30px;border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});color:#050122;font-family:${BODY};font-size:16px;line-height:20px;font-weight:bold;text-decoration:none;">${esc(u.buttonLabel)}</a>
+    <a class="btn" href="${esc(buttonUrl)}" target="_blank" style="display:inline-block;margin:6px;padding:15px 30px;border-radius:999px;background:${C.mint};background-image:linear-gradient(135deg,${C.mint},${C.cyan});color:#050122;font-family:${BODY};font-size:16px;line-height:20px;font-weight:bold;text-decoration:none;">${esc(u.buttonLabel)}</a>
   </td></tr>`
       : '',
     u.includePass
@@ -168,7 +170,7 @@ ${passRow(d, o)}`
     '',
     messageText(message),
     ...(u.now ? ['', ...(u.before ? [`Was: ${u.before}`] : []), `Now: ${u.now}`] : []),
-    ...(u.buttonLabel && u.buttonUrl ? ['', `${u.buttonLabel}: ${u.buttonUrl}`] : []),
+    ...(u.buttonLabel && buttonUrl ? ['', `${u.buttonLabel}: ${buttonUrl}`] : []),
     ...(u.includePass
       ? [
           '',

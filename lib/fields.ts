@@ -229,6 +229,76 @@ export const U = {
 const MANILA_TIME = { dateFormat: { name: 'local' }, timeFormat: { name: '12hour' }, timeZone: 'Asia/Manila' };
 const CHECK = { icon: 'check', color: 'greenBright' };
 
+// ---------------------------------------------------------------- the Feedback table
+
+export const FEEDBACK_TABLE = 'Feedback';
+
+/** Column names of the Feedback table (one row per answered feedback form). */
+export const FB = {
+  number: 'Certificate No.',
+  submittedAt: 'Submitted At',
+  ref: 'Reference No.',
+  name: 'Name on Certificate',
+  registeredName: 'Registered Name',
+  email: 'Email',
+  mode: 'How They Joined',
+  checkedIn: 'Checked In',
+  overall: 'Overall Rating (1-5)',
+  relevance: 'Topic Relevant (1-5)',
+  speaker: 'Speaker Clear and Engaging (1-5)',
+  learning: 'Learned Something Useful (1-5)',
+  discussion: 'Conversation Meaningful (1-5)',
+  organization: 'Well Organized (1-5)',
+  setting: 'Venue or Zoom (1-5)',
+  recommend: 'Would Recommend (0-10)',
+  takeaway: 'Most Valuable Takeaway',
+  improve: 'What Could Be Better',
+  topics: 'Topics for Next Time',
+  topicsOther: 'Topics for Next Time (Other)',
+  share: 'May Share Comments Without Name',
+  consent: 'Data Privacy Consent',
+  certEmail: 'Certificate Email',
+  certEmailAt: 'Certificate Emailed At',
+} as const;
+
+export const CERT_EMAIL_STATES = ['Sending', 'Sent', 'Failed', 'Not set up'] as const;
+export type CertEmailState = (typeof CERT_EMAIL_STATES)[number];
+
+const score = (name: string, description: string): FieldSpec => ({ name, type: 'number', description, options: { precision: 0 } });
+
+/** Feedback schema, in column order. The first entry is the primary field. */
+export const FEEDBACK_SPECS: FieldSpec[] = [
+  text(FB.number, 'Number printed on the Certificate of Participation.'),
+  { name: FB.submittedAt, type: 'dateTime', description: 'When the feedback was sent (Philippine time).', options: MANILA_TIME },
+  text(FB.ref, 'The registration it belongs to.'),
+  text(FB.name, 'As printed on the certificate.'),
+  text(FB.registeredName, 'As typed when registering, to compare with the certificate.'),
+  { name: FB.email, type: 'email', description: 'Where the certificate was emailed (from the registration).' },
+  { name: FB.mode, type: 'singleSelect', options: choices(ATTENDANCE_MODES, ['tealLight2', 'purpleLight2']) },
+  { name: FB.checkedIn, type: 'checkbox', description: 'Whether the check-in desk had scanned them when they sent this.', options: CHECK },
+  score(FB.overall, 'Overall rating: 1 Poor to 5 Excellent.'),
+  score(FB.relevance, 'The topic was relevant to my studies or work. 1 Strongly disagree to 5 Strongly agree.'),
+  score(FB.speaker, 'The guest speaker explained ideas clearly and kept me engaged.'),
+  score(FB.learning, 'I learned something I can use.'),
+  score(FB.discussion, 'The conversation and open questions were meaningful.'),
+  score(FB.organization, 'The event was well organized, from registration to closing.'),
+  score(FB.setting, 'Onsite: the venue was comfortable and easy to reach. Online: the Zoom session was easy to join, with clear audio and video.'),
+  score(FB.recommend, 'How likely to recommend an event like this: 0 to 10.'),
+  { name: FB.takeaway, type: 'multilineText', description: 'What was your most valuable takeaway?' },
+  { name: FB.improve, type: 'multilineText', description: 'What could we do better next time?' },
+  { name: FB.topics, type: 'multipleSelects', description: 'Which topics would you like in future talks?', options: choices(TOPICS, TOPIC_COLORS) },
+  text(FB.topicsOther, 'Filled in when "Other" is one of the topics.'),
+  { name: FB.share, type: 'singleSelect', description: 'Empty = did not answer, so do not share.', options: choices(['Yes', 'No'], ['greenLight2', 'redLight2']) },
+  { name: FB.consent, type: 'singleSelect', options: choices(['Yes', 'No'], ['greenLight2', 'redLight2']) },
+  {
+    name: FB.certEmail,
+    type: 'singleSelect',
+    description: 'The certificate email. Failed = the mail server refused it; they can still download it or ask for it again.',
+    options: choices(CERT_EMAIL_STATES, ['yellowLight2', 'greenLight2', 'redLight2', 'grayLight2']),
+  },
+  { name: FB.certEmailAt, type: 'dateTime', options: MANILA_TIME },
+];
+
 /** Email Updates schema, in column order. The first entry is the primary field. */
 export const UPDATE_SPECS: FieldSpec[] = [
   { name: U.code, type: 'singleLineText', description: 'Made by the Email updates page; also written in each registration\'s Email Log.' },

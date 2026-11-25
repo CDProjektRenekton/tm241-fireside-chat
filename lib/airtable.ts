@@ -1,6 +1,6 @@
 import 'server-only';
 import { randomInt } from 'node:crypto';
-import { F, F_DETAIL, FIELD_SPECS, U, UPDATE_SPECS, UPDATES_TABLE } from './fields';
+import { type CertEmailState, F, F_DETAIL, FB, FEEDBACK_SPECS, FEEDBACK_TABLE, FIELD_SPECS, type FieldSpec, U, UPDATE_SPECS, UPDATES_TABLE } from './fields';
 import { DETAIL_KEYS, type RoleDetails } from './roles';
 import { REF_ALPHABET } from './ticket';
 import type { Registration, SchemaStatus } from './types';
@@ -133,31 +133,39 @@ function registrationsTable(tables: MetaTable[]) {
   return tables.find((t) => t.id === table || t.name === table) ?? tables.find((t) => t.name === DEFAULT_TABLE_NAME);
 }
 
-/** Columns the Email Updates table still needs (or the table itself). */
-function missingUpdateColumns(tables: MetaTable[]) {
-  const t = tables.find((x) => x.name === UPDATES_TABLE);
-  if (!t) return [`${UPDATES_TABLE} (table)`];
-  const names = new Set(t.fields.map((f) => f.name));
-  return UPDATE_SPECS.filter((s) => !names.has(s.name)).map((s) => `${UPDATES_TABLE}: ${s.name}`);
+/** Tables beside the registrations. */
+const EXTRA_TABLES: { name: string; description: string; specs: FieldSpec[] }[] = [
+  { name: UPDATES_TABLE, description: 'Email updates written on the dashboard (Email updates page): drafts and what was sent.', specs: UPDATE_SPECS },
+  { name: FEEDBACK_TABLE, description: 'Answers to the feedback form (/feedback), with the certificate each one was given.', specs: FEEDBACK_SPECS },
+];
+
+/** Tables that don't exist yet, and columns the others still need. */
+function missingExtras(tables: MetaTable[]) {
+  return EXTRA_TABLES.flatMap(({ name, specs }) => {
+    const t = tables.find((x) => x.name === name);
+    if (!t) return [`${name} (table)`];
+    const names = new Set(t.fields.map((f) => f.name));
+    return specs.filter((s) => !names.has(s.name)).map((s) => `${name}: ${s.name}`);
+  });
 }
 
-/** Creates the Email Updates table, or any columns it is missing. Safe to run repeatedly. */
-async function ensureUpdatesTable(tables: MetaTable[]): Promise<string[]> {
+/** Creates those tables, or any columns they are missing. Safe to run repeatedly. */
+async function ensureExtras(tables: MetaTable[]): Promise<string[]> {
   const { baseId } = config();
-  const t = tables.find((x) => x.name === UPDATES_TABLE);
-  if (!t) {
-    await request(`/meta/bases/${baseId}/tables`, {
-      method: 'POST',
-      body: { name: UPDATES_TABLE, description: 'Email updates written on the dashboard (Email updates page): drafts and what was sent.', fields: UPDATE_SPECS },
-    });
-    return [`${UPDATES_TABLE} (table)`];
-  }
-  const names = new Set(t.fields.map((f) => f.name));
   const created: string[] = [];
-  for (const spec of UPDATE_SPECS) {
-    if (names.has(spec.name)) continue;
-    await request(`/meta/bases/${baseId}/tables/${t.id}/fields`, { method: 'POST', body: spec });
-    created.push(`${UPDATES_TABLE}: ${spec.name}`);
+  for (const { name, description, specs } of EXTRA_TABLES) {
+    const t = tables.find((x) => x.name === name);
+    if (!t) {
+      await request(`/meta/bases/${baseId}/tables`, { method: 'POST', body: { name, description, fields: specs } });
+      created.push(`${name} (table)`);
+      continue;
+    }
+    const names = new Set(t.fields.map((f) => f.name));
+    for (const spec of specs) {
+      if (names.has(spec.name)) continue;
+      await request(`/meta/bases/${baseId}/tables/${t.id}/fields`, { method: 'POST', body: spec });
+      created.push(`${name}: ${spec.name}`);
+    }
   }
   return created;
 }
@@ -168,7 +176,7 @@ export async function getSchemaStatus(): Promise<SchemaStatus> {
     const t = registrationsTable(tables);
     if (!t) return { ok: false, missing: FIELD_SPECS.map((f) => f.name) };
     const names = new Set(t.fields.map((f) => f.name));
-    const missing = [...FIELD_SPECS.filter((f) => !names.has(f.name)).map((f) => f.name), ...missingUpdateColumns(tables)];
+    const missing = [...FIELD_SPECS.filter((f) => !names.has(f.name)).map((f) => f.name), ...missingExtras(tables)];
     return { ok: missing.length === 0, tableName: t.name, missing };
   } catch (e) {
     return { ok: true, missing: [], error: e instanceof Error ? e.message : String(e) };
@@ -208,7 +216,7 @@ export async function ensureSchema(): Promise<SetupReport> {
       tableId: created.id,
       tableName: created.name,
       createdTable: true,
-      createdFields: [...FIELD_SPECS.map((f) => f.name), ...(await ensureUpdatesTable(tables))],
+      createdFields: [...FIELD_SPECS.map((f) => f.name), ...(await ensureExtras(tables))],
       typeMismatches: [],
     };
   }
@@ -242,7 +250,7 @@ export async function ensureSchema(): Promise<SetupReport> {
     await request(`/meta/bases/${baseId}/tables/${existing.id}/fields`, { method: 'POST', body: spec });
     report.createdFields.push(spec.name);
   }
-  report.createdFields.push(...(await ensureUpdatesTable(tables)));
+  report.createdFields.push(...(await ensureExtras(tables)));
   return report;
 }
 
@@ -473,7 +481,7 @@ export async function createUpdate(content: UpdateContent): Promise<EmailUpdate>
     return toUpdate((await insert()).records[0]);
   } catch (e) {
     if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
-    await ensureUpdatesTable(await allTables());
+    await ensureExtras(await allTables());
     return toUpdate((await insert()).records[0]);
   }
 }
@@ -491,3 +499,72 @@ export const setUpdateStatus = (id: string, status: UpdateStatus, more: { sentAt
     ...(more.sentAt ? { [U.sentAt]: more.sentAt } : {}),
     ...(more.people !== undefined ? { [U.people]: more.people } : {}),
   });
+
+// ---------------------------------------------------------------- feedback
+
+const FEEDBACK_PATH = encodeURIComponent(FEEDBACK_TABLE);
+
+/** What the certificate needs from an answered feedback form. */
+export interface FeedbackRecord {
+  id: string;
+  number: string;
+  ref: string;
+  name: string;
+  email: string;
+  certEmail: string;
+  certEmailAt: string;
+}
+
+function toFeedback(r: AirtableRecord): FeedbackRecord {
+  const f = r.fields;
+  return {
+    id: r.id,
+    number: str(f[FB.number]),
+    ref: str(f[FB.ref]),
+    name: str(f[FB.name]),
+    email: str(f[FB.email]),
+    certEmail: str(f[FB.certEmail]),
+    certEmailAt: str(f[FB.certEmailAt]),
+  };
+}
+
+/** The answered form of this person (any of their reference numbers, or the same address), or null. */
+export async function findFeedback(refs: string[], email: string): Promise<FeedbackRecord | null> {
+  const address = email.trim().toLowerCase();
+  let offset: string | undefined;
+  try {
+    do {
+      const q = new URLSearchParams({ pageSize: '100' });
+      if (offset) q.set('offset', offset);
+      const page = await request<{ records: AirtableRecord[]; offset?: string }>(`/${config().baseId}/${FEEDBACK_PATH}?${q}`);
+      const hit = page.records.map(toFeedback).find((f) => f.number && ((f.ref && refs.includes(f.ref)) || (address && f.email.trim().toLowerCase() === address)));
+      if (hit) return hit;
+      offset = page.offset;
+    } while (offset);
+  } catch (e) {
+    // The table is made when the first answer is saved; until then nobody has answered.
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+  }
+  return null;
+}
+
+/** Saves one answered form. If the table or columns are missing, creates them once and retries. */
+export async function createFeedback(fields: Fields): Promise<FeedbackRecord> {
+  const insert = () =>
+    request<{ records: AirtableRecord[] }>(`/${config().baseId}/${FEEDBACK_PATH}`, { method: 'POST', body: { records: [{ fields }], typecast: true } });
+  try {
+    return toFeedback((await insert()).records[0]);
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    await ensureExtras(await allTables());
+    return toFeedback((await insert()).records[0]);
+  }
+}
+
+export async function setCertificateEmail(id: string, state: CertEmailState): Promise<void> {
+  if (!RECORD_ID.test(id)) return;
+  await request(`/${config().baseId}/${FEEDBACK_PATH}/${id}`, {
+    method: 'PATCH',
+    body: { fields: { [FB.certEmail]: state, ...(state === 'Sent' || state === 'Sending' ? { [FB.certEmailAt]: new Date().toISOString() } : {}) } },
+  });
+}

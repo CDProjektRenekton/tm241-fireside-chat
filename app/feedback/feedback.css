@@ -1,0 +1,398 @@
+/* Feedback form: the registration form's look, in one column and almost still. */
+
+@font-face {
+  font-family: 'Certificate Name';
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  src: url('/certificate-name.woff2') format('woff2');
+}
+
+/* minimal motion: nothing slides, sweeps, bursts or twinkles; only quick fades and hovers remain */
+.feedback-page .topbar,
+.feedback-page .form-card,
+.feedback-page .page-foot,
+.feedback-page .section,
+.feedback-page .section > *,
+.feedback-page .card-detail,
+.feedback-page .hero-kicker,
+.feedback-page .field-error,
+.feedback-page .pass-logo * {
+  animation: none !important;
+}
+
+.feedback-page .burst {
+  display: none;
+}
+
+.feedback-page .traj-step.is-current .traj-planet::after {
+  animation: none;
+}
+
+/* the centred header needs a quiet sky behind it: the dots sit further out and dimmer */
+.space:has(+ .feedback-page) .halftone-tr {
+  right: -26%;
+  opacity: 0.5;
+}
+
+.feedback-page .card-choice.is-checked .card-icon {
+  transform: none;
+}
+
+.feedback-page .traj-fill {
+  transition-duration: 0.25s;
+}
+
+.feedback-page .section {
+  animation: feedback-in 0.2s ease-out !important;
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.feedback-hero {
+  display: grid;
+  justify-items: center;
+  max-width: 640px;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+
+.feedback-hero .hero-kicker {
+  margin: 0 0 4px;
+}
+
+.feedback-logo {
+  line-height: 0;
+}
+
+.feedback-logo .pass-logo {
+  width: min(300px, 70vw);
+}
+
+.feedback-hero h1 {
+  margin: 14px 0 6px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.feedback-hero p:last-child {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-shadow: var(--halo);
+}
+
+.feedback-page .form-card {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.feedback-page .callout {
+  margin-top: 0;
+}
+
+.feedback-page form .callout {
+  margin-top: 18px;
+}
+
+.feedback-closed {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.feedback-closed svg {
+  color: var(--cyan-300);
+}
+
+.feedback-closed h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.feedback-closed p {
+  margin: 0;
+  max-width: 46ch;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------- scales */
+
+.scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scale-11 {
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.scale-step,
+.agree-step {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.scale-step input,
+.agree-step input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scale-step:hover,
+.agree-step:hover {
+  border-color: rgba(173, 227, 242, 0.55);
+}
+
+.scale-step.is-checked,
+.agree-step.is-checked {
+  border-color: transparent;
+  background: var(--grad-accent);
+  color: var(--navy-950);
+}
+
+.scale-step:has(input:focus-visible),
+.agree-step:has(input:focus-visible) {
+  outline: 2px solid var(--cyan-200);
+  outline-offset: 2px;
+}
+
+.has-error .scale-step:not(.is-checked),
+.agree-row.is-missing .agree-step {
+  border-color: rgba(255, 143, 154, 0.5);
+}
+
+.scale-ends {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.scale-ends span:last-child {
+  grid-column: 3;
+  text-align: right;
+}
+
+.scale-ends b {
+  grid-column: 2;
+  font-weight: 400;
+  color: var(--cyan-200);
+}
+
+.scale-ends .is-chosen {
+  color: var(--cyan-200);
+}
+
+.agree {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.agree-head,
+.agree-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+.agree-head {
+  grid-template-columns: minmax(0, 1fr) repeat(5, 60px);
+  gap: 7.5px;
+  padding-bottom: 4px;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.agree-row + .agree-row {
+  border-top: 1px solid var(--line);
+}
+
+.agree-row > p:first-child {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.agree-n {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--cyan-300);
+}
+
+.agree-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7.5px;
+}
+
+.agree-step {
+  min-height: 42px;
+  font-size: 16px;
+}
+
+.agree-chosen {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- certificate */
+
+.feedback-done {
+  text-align: center;
+}
+
+.feedback-done > *,
+.feedback-done .success-title,
+.feedback-done .success-script,
+.feedback-done .success-lead {
+  animation: none !important;
+}
+
+.feedback-done .pass-actions {
+  justify-content: center;
+}
+
+.cert {
+  position: relative;
+  margin: 4px 0 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.9);
+  container-type: inline-size;
+}
+
+.cert img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cert-name {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 30.6%;
+  height: 9.6%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Certificate Name', 'Arial Black', Arial, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 4.5cqw;
+  line-height: 1.02;
+  color: #0b0f2e;
+}
+
+.cert-no {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 92.7%;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 0.9cqw;
+  color: #29426b;
+}
+
+.feedback-done .success-facts {
+  text-align: left;
+}
+
+.feedback-done .field-hint {
+  margin-top: 14px;
+}
+
+@media (max-width: 720px) {
+  .agree-head {
+    display: none;
+  }
+
+  .agree-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .agree-chosen {
+    display: block;
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+}
+
+@media (max-width: 520px) {
+  .space:has(+ .feedback-page) .halftone-tr {
+    right: -50%;
+    opacity: 0.35;
+  }
+
+  .feedback-page .cards-consent {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* the long last button gets its own line */
+  .feedback-page .actions.is-last {
+    flex-direction: column-reverse;
+  }
+
+  .feedback-page .actions.is-last .btn {
+    flex: none;
+    width: 100%;
+  }
+
+  .scale {
+    gap: 6px;
+  }
+
+  .scale-11 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}

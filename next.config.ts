@@ -11,10 +11,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // ExcelJS is loaded at runtime from node_modules instead of being bundled.
   serverExternalPackages: ['exceljs', 'nodemailer'],
-  // The confirmation email attaches its artwork from public/email, so ship those files with the functions that send it.
+  // Emails attach their artwork from public/email, and certificates are made from assets/certificate, so ship those
+  // files with the functions that use them.
   outputFileTracingIncludes: {
     '/api/submit': ['./public/email/**/*'],
     '/api/email/**/*': ['./public/email/**/*'],
+    '/api/feedback': ['./public/email/**/*', './assets/certificate/**/*'],
+    '/api/feedback/**/*': ['./public/email/**/*', './assets/certificate/**/*'],
   },
   async headers() {
     return [

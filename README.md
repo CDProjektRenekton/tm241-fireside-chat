@@ -13,6 +13,8 @@ organized by the TM241 class of the UP Diliman Technology Management Center.
 - **`/dashboard`** — password-protected dashboard: key figures, affiliation and topic charts,
   registrations per day, universities/organizations, a **question wall** for the moderator, a searchable
   table, attendance, and exports to **Excel (.xlsx)**, **CSV**, an **attendance sheet** and **speaker questions**.
+- **`/feedback`** — the feedback form. Finishing it makes the **Certificate of Participation** (PDF) to download
+  on the spot, and emails it too.
 - **Confirmation email** — right after registering, each person gets their boarding pass by email: galaxy
   header art, the pass with its **QR code**, Add to Google Calendar / directions buttons and an attached invite.
 - **`/checkin`** — the **check-in desk** for event day: scans the QR code on a boarding pass with a phone or
@@ -65,6 +67,32 @@ updates are kept in the Airtable table **Email Updates**; each registration's **
 had, so nobody gets the same update twice, even if the page closes or two organizers press send. If Gmail's
 daily limit is reached it stops and the rest stay in line. Once an update has started going out its words are
 locked; use it as a new draft instead.
+
+## Feedback and certificates (`/feedback`)
+
+Opens by itself when the event starts (`EVENT.startsAt`); before that it says when. A signed-in organizer can
+open it any time to try it: that saves nothing, the certificate is numbered **FC-COP-SAMPLE**, and only an email
+address typed into the first question gets the sample email.
+
+1. **You:** the registered email or the reference number (it must match a registration), the name exactly as it
+   should be printed, and how they joined.
+2. **Ratings:** overall (1–5), six statements (1–5; the last one is about the venue or Zoom), recommend (0–10).
+3. **Your thoughts:** takeaway, what to improve, topics for next time, may we share the comments, consent.
+
+Then the certificate appears with a **Download** button and is emailed to the **registered** address, never to one
+typed on the form. One answer per person. Coming back later, the email address alone can only have the certificate
+emailed again (at most every ten minutes); the reference number can also download it.
+
+Answers are kept in the Airtable table **Feedback** (made on first use, or by the dashboard's "Create fields now"),
+with the name on the certificate, its number, whether they were checked in, and **Certificate Email**
+(Sending / Sent / Failed / Not set up). For a misspelled name, correct **Name on Certificate** there: the person
+then gets the corrected certificate by opening /feedback with their reference number.
+
+To invite people, use the **Thank you and feedback** starting point in Email updates: its button opens the form
+with each person's own details filled in (`/feedback?ref={ref}`).
+
+The certificate is `assets/certificate/template.pdf` (A4 landscape, based on the Certificate of Appreciation);
+`lib/certificate.ts` prints the name and number on it.
 
 ## Confirmation email
 
@@ -186,6 +214,8 @@ form also repairs the schema on its first submission. Don’t rename these colum
 looks them up by name; if you must, update `lib/fields.ts`). Extra columns you add are ignored by the app
 and safe to use. You can also tick or untick **Attended** by hand in Airtable; the desk and dashboard follow it.
 
+Two more tables are kept in the same base: **Email Updates** and **Feedback**.
+
 ## Customising
 
 | What | Where |
@@ -198,6 +228,8 @@ and safe to use. You can also tick or untick **Attended** by hand in Airtable; t
 | Check-in desk (scanner, results, search) | `components/checkin/` + `app/checkin/checkin.css`; API in `app/api/checkin/route.ts` |
 | Confirmation email (layout, wording) | `lib/email/template.ts`; sending in `lib/email/send.ts` |
 | Email header art and icons | `public/email/` (`hero.jpg` is 1200 × 680, shown at 600 px wide) |
+| Feedback questions, opening time | `lib/feedback.ts`; form in `components/feedback/`, look in `app/feedback/feedback.css` |
+| Certificate (blank, name and number) | `assets/certificate/template.pdf`, `lib/certificate.ts`; picture on the page `public/certificate-preview.jpg`; its email `lib/email/certificate.ts` |
 | Splash screen | `components/Splash.tsx` + the *Splash* section of `app/globals.css` |
 | Background (stars, halftone, layout of the clouds) | `components/SpaceBackground.tsx` + `app/globals.css` |
 | Nebula cloud colours and shapes (drawn into small canvases) | `components/nebula.ts` |
@@ -207,6 +239,8 @@ and safe to use. You can also tick or untick **Attended** by hand in Airtable; t
 
 ## Security notes
 
+- The feedback form never shows a person's name or details for an email address alone (only for the reference
+  number on their pass), and certificates are emailed only to the registered address.
 - The Airtable token and dashboard password live only in Vercel environment variables.
 - Dashboard and desk sessions use a signed, HTTP-only cookie that expires after 12 hours. The desk password
   cannot open the dashboard, responses or exports, and the check-in API returns only the name, organization,

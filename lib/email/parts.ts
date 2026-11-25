@@ -22,6 +22,7 @@ export const EMAIL_IMAGES = [
   'hero',
   'hero-online',
   'hero-update',
+  'hero-thanks',
   'logo',
   'qr',
   'icon-calendar',

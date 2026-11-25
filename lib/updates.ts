@@ -97,8 +97,9 @@ export const PRESETS: { key: string; label: string; content: Partial<UpdateConte
     content: {
       subject: `Thank you for joining the ${EVENT.series}`,
       headline: 'Thank you for joining us',
-      message: `Thank you for being part of the **${EVENT.series}: ${EVENT.title}**. We'd love to hear what you thought; it takes only a few minutes.`,
-      buttonLabel: 'Give feedback',
+      message: `Thank you for being part of the **${EVENT.series}: ${EVENT.title}**. We'd love to hear what you thought. The feedback form takes about three minutes, and your **Certificate of Participation** is ready as soon as you finish.`,
+      buttonLabel: 'Give feedback and get my certificate',
+      buttonUrl: 'https://tm241-fireside-chat.vercel.app/feedback?ref={ref}',
       audience: 'Checked in',
       includePass: false,
     },
@@ -143,7 +144,7 @@ export function validateUpdate(u: UpdateContent): FieldErrors {
   if (u.buttonLabel && !u.buttonUrl) e.buttonUrl = 'Please add the link this button opens.';
   if (u.buttonUrl && !u.buttonLabel) e.buttonLabel = 'Please write the words on the button.';
   if (u.buttonUrl && !isWebLink(u.buttonUrl)) e.buttonUrl = 'Please enter a full link that starts with https://';
-  const unknown = `${u.subject} ${u.headline} ${u.message}`.match(/\{[^{}\n]{1,20}\}/g)?.filter((t) => !/^\{(name|ref)\}$/i.test(t));
+  const unknown = `${u.subject} ${u.headline} ${u.message} ${u.buttonUrl}`.match(/\{[^{}\n]{1,20}\}/g)?.filter((t) => !/^\{(name|ref)\}$/i.test(t));
   if (unknown?.length) e.message = `${unknown[0]} is not something the email can fill in. Use {name} or {ref}.`;
   return e;
 }
