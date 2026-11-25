@@ -40,6 +40,9 @@ export function buildInvite({ ref, name, organization, online = false, joinUrl }
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${ref}@tm241-fireside-chat`,
+    // Raise when the date, time or place changes, so a re-sent invite replaces the earlier copy
+    // (1 = start moved from 1:30 PM to 1:00 PM).
+    'SEQUENCE:1',
     `DTSTAMP:${icsTime(new Date().toISOString())}`,
     `DTSTART:${icsTime(EVENT.startsAt)}`,
     `DTEND:${icsTime(EVENT.endsAt)}`,

@@ -8,10 +8,10 @@ export const EVENT = {
   weekday: 'Friday',
   dateEn: 'November 27, 2026',
   dateShort: '27 Nov 2026',
-  time: '1:30 PM – 3:30 PM',
+  time: '1:00 PM – 3:00 PM',
   /** Philippine time (UTC+8). Used by the countdown and the calendar invite. */
-  startsAt: '2026-11-27T13:30:00+08:00',
-  endsAt: '2026-11-27T15:30:00+08:00',
+  startsAt: '2026-11-27T13:00:00+08:00',
+  endsAt: '2026-11-27T15:00:00+08:00',
   venue: 'School of Urban and Regional Planning Training Hall',
   /** The building alone, for the map search. */
   venueBuilding: 'School of Urban and Regional Planning',

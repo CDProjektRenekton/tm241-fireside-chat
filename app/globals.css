@@ -2608,7 +2608,7 @@ a {
   color: var(--ink-3);
 }
 
-/* "Opens 1:30 PM" over "Fri 27 Nov 2026" in the narrow stub */
+/* "Opens 1:00 PM" over "Fri 27 Nov 2026" in the narrow stub */
 .pass-zoom-when > span {
   display: block;
 }
