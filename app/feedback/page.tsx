@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 const opens = new Date(FEEDBACK_OPENS_AT);
 const opensDay = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', weekday: 'long', month: 'long', day: 'numeric' }).format(opens);
-const opensTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' }).format(opens);
+const opensTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' }).format(opens).replace(/\s/g, '\u00a0');
 
 /** Feedback after the event; finishing it gives the Certificate of Participation. */
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ ref?: string | string[] }> }) {

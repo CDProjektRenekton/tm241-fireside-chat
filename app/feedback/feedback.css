@@ -349,6 +349,13 @@
   margin-top: 14px;
 }
 
+@media (max-width: 1100px) {
+  .space:has(+ .feedback-page) .halftone-tr {
+    right: -52%;
+    opacity: 0.35;
+  }
+}
+
 @media (max-width: 720px) {
   .agree-head {
     display: none;
@@ -369,11 +376,6 @@
 }
 
 @media (max-width: 520px) {
-  .space:has(+ .feedback-page) .halftone-tr {
-    right: -50%;
-    opacity: 0.35;
-  }
-
   .feedback-page .cards-consent {
     grid-template-columns: minmax(0, 1fr);
   }
