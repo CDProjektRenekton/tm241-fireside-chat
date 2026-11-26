@@ -37,6 +37,7 @@ import {
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import PrintReport from './PrintReport';
 import QuestionWall from './QuestionWall';
+import { onsiteSeats } from '@/lib/capacity';
 import ResponsesTable from './ResponsesTable';
 import RoleDetailsCard from './RoleDetailsCard';
 
@@ -111,6 +112,8 @@ export default function Dashboard() {
   const filtered = useMemo(() => applyFilters(records, filters), [records, filters]);
   const stats = useMemo(() => computeStats(filtered), [filtered]);
   const dupKeys = useMemo(() => findDuplicates(records), [records]);
+  // Seats count everyone, whatever the filters show.
+  const seats = useMemo(() => onsiteSeats(records), [records]);
 
   const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((f) => ({ ...f, [key]: value }));
   const toggleFilter = (key: 'affiliation' | 'topic' | 'sex' | 'age' | 'mode', value: string) =>
@@ -429,6 +432,20 @@ export default function Dashboard() {
                     tip: [{ value: fmt(m.count), label: `registrants · ${pct(m.count, stats.total)}% of all`, color: 'var(--s1)' }],
                   }))}
                 />
+                <p className={`seats${seats.full ? ' is-full' : seats.left <= 5 ? ' is-low' : ''}`}>
+                  <span>
+                    <b>
+                      Onsite seats: {fmt(seats.taken)} of {fmt(seats.max)} taken
+                    </b>
+                    {seats.full
+                      ? ' · Full. The form now only offers Online.'
+                      : ` · ${plural(seats.left, 'seat', 'seats')} left. When they're gone, the form only offers Online.`}
+                  </span>
+                  <span className="seats-bar" aria-hidden="true">
+                    <span style={{ width: `${Math.min(100, (seats.taken / seats.max) * 100)}%` }} />
+                  </span>
+                  <small>Counted once per email address; anyone moved to onsite here counts too.</small>
+                </p>
                 <p className="muted demo-note">
                   {fmt(stats.attended)} of {plural(stats.onsite, 'onsite registrant', 'onsite registrants')} checked in so far.
                   Registrations from before this question was added count as onsite.
@@ -574,6 +591,7 @@ export default function Dashboard() {
                 rows={filtered}
                 dupKeys={dupKeys}
                 showAll={false}
+                onsiteFull={seats.full}
                 onChanged={(r) => setPayload((p) => (p ? { ...p, records: p.records.map((x) => (x.id === r.id ? r : x)) } : p))}
               />
             </section>

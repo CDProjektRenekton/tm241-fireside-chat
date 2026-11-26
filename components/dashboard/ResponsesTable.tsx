@@ -66,7 +66,7 @@ type SwitchResult = { registration?: Registration; email?: 'Sent' | 'Failed' | '
  * Moves a registrant between onsite and online, and (if ticked) emails them the change with their new
  * boarding pass: the QR code for the door, or the Join on Zoom button.
  */
-function ModeSwitch({ reg, onChanged }: { reg: Registration; onChanged: (r: Registration) => void }) {
+function ModeSwitch({ reg, onChanged, onsiteFull }: { reg: Registration; onChanged: (r: Registration) => void; onsiteFull: boolean }) {
   const current = attendanceModeOf(reg);
   const target: AttendanceMode = current === 'Online' ? 'Onsite' : 'Online';
   const [asking, setAsking] = useState(false);
@@ -128,6 +128,12 @@ function ModeSwitch({ reg, onChanged }: { reg: Registration; onChanged: (r: Regi
               ? `${first} will need the QR code on a new boarding pass to get in at the door.`
               : `${first} will join on Zoom instead, so the QR code is no longer needed.`}
           </p>
+          {target === 'Onsite' && onsiteFull && (
+            <p className="mode-warn">
+              <Alert width={14} height={14} />
+              Onsite is already full. Moving them gives one seat more than the limit; you can still do it.
+            </p>
+          )}
           <label className="mode-check">
             <input type="checkbox" checked={notify} disabled={!reg.email || busy} onChange={(e) => setNotify(e.target.checked)} />
             <span>
@@ -186,10 +192,13 @@ export default function ResponsesTable({
   dupKeys,
   showAll,
   onChanged,
+  onsiteFull = false,
 }: {
   rows: Registration[];
   dupKeys: Set<string>;
   showAll: boolean;
+  /** All onsite seats are taken (a move to onsite then warns first). */
+  onsiteFull?: boolean;
   /** A registration was changed here (e.g. moved between onsite and online). */
   onChanged?: (r: Registration) => void;
 }) {
@@ -349,6 +358,7 @@ export default function ResponsesTable({
                   <ModeSwitch
                     key={selected.id}
                     reg={selected}
+                    onsiteFull={onsiteFull}
                     onChanged={(r) => {
                       setSelected(r);
                       onChanged?.(r);

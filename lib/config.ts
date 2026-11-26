@@ -22,6 +22,8 @@ export const EVENT = {
     'Join us for an engaging conversation about leadership, institutional development, technology acquisition, and the future of Philippine innovation.',
   /** Reference numbers look like TM241-FC-7KQ2MX. */
   refPrefix: 'TM241-FC',
+  /** Onsite seats. Once they are taken the form only offers Online (lib/capacity.ts). */
+  onsiteSeats: 65,
 } as const;
 
 export const venueFull = () => `${EVENT.venue}, ${EVENT.venueCampus}`;

@@ -132,6 +132,8 @@ export interface CardOption {
   label: string;
   icon?: ReactNode;
   sub?: string;
+  /** Shown but can't be chosen, e.g. Onsite once the seats are taken. */
+  disabled?: boolean;
 }
 
 interface CardChoiceProps extends LabelProps {
@@ -193,12 +195,13 @@ function CardChoiceImpl(p: CardChoiceProps) {
             const checked = p.value === o.value;
             return (
               <Fragment key={o.value}>
-                <label className={`card-choice${checked ? ' is-checked' : ''}`}>
+                <label className={`card-choice${checked ? ' is-checked' : ''}${o.disabled ? ' is-disabled' : ''}`} aria-disabled={o.disabled || undefined}>
                   <input
                     type="radio"
                     name={p.name}
                     value={o.value}
                     checked={checked}
+                    disabled={o.disabled}
                     onChange={() => {
                       p.onChange(o.value);
                       setPulse(o.value);

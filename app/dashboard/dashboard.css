@@ -1375,6 +1375,69 @@ a.head-btn {
   overflow-wrap: anywhere;
 }
 
+/* onsite seats (lib/capacity.ts) */
+.seats {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--plane);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.seats b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.seats small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.seats-bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.seats-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cyan-300);
+}
+
+.seats.is-low .seats-bar span {
+  background: #f5c76b;
+}
+
+.seats.is-full .seats-bar span {
+  background: #ff8f9a;
+}
+
+.seats.is-full b {
+  color: #ffb3ba;
+}
+
+.mode-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #ffd38a;
+  font-size: 13.5px;
+}
+
+.mode-warn svg {
+  flex: none;
+  margin-top: 3px;
+}
+
 /* moving someone between onsite and online */
 .mode-switch {
   display: grid;

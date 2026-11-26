@@ -68,6 +68,16 @@ had, so nobody gets the same update twice, even if the page closes or two organi
 daily limit is reached it stops and the rest stay in line. Once an update has started going out its words are
 locked; use it as a new draft instead.
 
+## Onsite seats (65)
+
+Onsite is limited to **65 people** (`EVENT.onsiteSeats` in `lib/config.ts`); online has no limit. Each email address
+counts once, by its latest registration, so registering twice doesn't take two seats. When all 65 are taken, the
+form still shows Onsite but greyed out ("Full"), with a note to join on Zoom instead. The server checks again at the
+moment of registering, so someone who chose Onsite just before the last seat went is sent back to choose Online
+(someone who already holds a seat may register again). The dashboard's *Onsite or online* card shows the seats taken.
+Organizers can still move someone to onsite when it is full (they are warned first), and moving someone to online
+frees a seat at once.
+
 ## Moving someone between onsite and online
 
 On the dashboard, **View details** → **Move to onsite** / **Move to online**. It asks first, then changes their
@@ -228,7 +238,7 @@ Two more tables are kept in the same base: **Email Updates** and **Feedback**.
 
 | What | Where |
 | --- | --- |
-| Event title, date, time, venue, reference prefix | `lib/config.ts` → `EVENT` |
+| Event title, date, time, venue, reference prefix, onsite seats | `lib/config.ts` → `EVENT` |
 | Affiliation and topic choices | `lib/config.ts` → `AFFILIATIONS`, `TOPICS` |
 | Questions, labels, privacy text | `components/form/RegistrationForm.tsx` |
 | Boarding pass, calendar invite, liftoff animation | `components/form/MissionPass.tsx` |

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AirtableError, ConfigError, findById, setAttendanceMode } from '@/lib/airtable';
 import { isAuthenticated, sameOrigin } from '@/lib/auth';
+import { forgetSeats } from '@/lib/capacity-server';
 import { ATTENDANCE_MODES, attendanceModeOf } from '@/lib/config';
 import { describeEmailError, sendModeSwitchEmail, siteUrl, ticketDataFrom } from '@/lib/email/send';
 
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
       if (!mode) return reply({ message: 'Choose Onsite or Online.' }, 400);
       if (attendanceModeOf(reg) === mode) return reply({ message: `${reg.name || 'This registrant'} is already ${mode.toLowerCase()}.`, registration: reg }, 409);
       registration = await setAttendanceMode(reg.id, mode);
+      forgetSeats();
       console.log(`[email/switch] ${reg.ref} moved to ${mode}`);
     }
   } catch (e) {

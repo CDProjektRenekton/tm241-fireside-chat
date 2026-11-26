@@ -1,6 +1,8 @@
 import { randomInt } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { AirtableError, ConfigError, createRegistration } from '@/lib/airtable';
+import { AirtableError, ConfigError, createRegistration, listRegistrations } from '@/lib/airtable';
+import { holdsOnsiteSeat, ONSITE_FULL_MESSAGE, onsiteSeats } from '@/lib/capacity';
+import { forgetSeats } from '@/lib/capacity-server';
 import { EVENT } from '@/lib/config';
 import { queueTicketEmail } from '@/lib/email/send';
 import { F, F_DETAIL } from '@/lib/fields';
@@ -69,7 +71,15 @@ export async function POST(req: Request) {
   const joinUrl = input.attendanceMode === 'Online' ? zoomJoinUrl() : null;
 
   try {
+    // Onsite seats are counted afresh for every onsite registration; someone who already holds one may register again.
+    if (input.attendanceMode !== 'Online') {
+      const rows = await listRegistrations();
+      if (onsiteSeats(rows).full && !holdsOnsiteSeat(rows, input.email)) {
+        return fail(409, ONSITE_FULL_MESSAGE, { errors: { attendanceMode: ONSITE_FULL_MESSAGE }, onsiteFull: true });
+      }
+    }
     await createRegistration(fields);
+    forgetSeats();
     // The boarding pass also goes out by email, after this response (never holds up or fails the registration).
     const emailed = queueTicketEmail(
       {

@@ -1521,6 +1521,23 @@ a {
     background 0.25s;
 }
 
+/* an option that can't be chosen (e.g. Onsite once the seats are taken) */
+.card-choice.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.card-choice.is-disabled:hover {
+  border-color: var(--line);
+  background: var(--glass-2);
+  transform: none;
+}
+
+.card-choice.is-disabled input {
+  cursor: not-allowed;
+}
+
 .card-choice.is-checked {
   border-color: var(--cyan-400);
   background: linear-gradient(135deg, rgba(94, 182, 211, 0.2), rgba(232, 71, 90, 0.08));

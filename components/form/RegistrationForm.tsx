@@ -80,6 +80,8 @@ const MODE_OPTIONS = [
   { value: 'Onsite', label: 'Onsite', sub: 'In person at UP Diliman', icon: <MapPin /> },
   { value: 'Online', label: 'Online', sub: 'Live on Zoom', icon: <ZoomLogo /> },
 ];
+/** Once the onsite seats are taken: Onsite stays visible but can't be chosen. */
+const MODE_OPTIONS_FULL = [{ ...MODE_OPTIONS[0], sub: 'Full', disabled: true }, MODE_OPTIONS[1]];
 const CONSENT_OPTIONS = [
   { value: 'Yes', label: 'Yes', sub: 'I give my consent', icon: <Check /> },
   { value: 'No', label: 'No', sub: 'I do not consent', icon: <Alert /> },
@@ -111,6 +113,28 @@ export default function RegistrationForm() {
   } | null>(null);
   const cardRef = useRef<HTMLElement>(null);
   const loaded = useRef(false);
+  /** All onsite seats are taken: Onsite is shown but can't be chosen. */
+  const [onsiteFull, setOnsiteFull] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    fetch('/api/capacity', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { onsite?: { full?: boolean } | null } | null) => {
+        if (live && j?.onsite?.full) setOnsiteFull(true);
+      })
+      .catch(() => {
+        /* unknown: Onsite stays open and the registration itself decides */
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  // A saved draft may still say Onsite.
+  useEffect(() => {
+    if (onsiteFull && data.attendanceMode === 'Onsite') setData((d) => ({ ...d, attendanceMode: '' }));
+  }, [onsiteFull, data.attendanceMode]);
 
   // Keep an in-progress draft for this browser tab only (sessionStorage clears when the tab closes,
   // which matters on shared computers at the registration desk).
@@ -216,7 +240,13 @@ export default function RegistrationForm() {
         joinUrl?: string;
         message?: string;
         errors?: FieldErrors;
+        onsiteFull?: boolean;
       };
+      // The last onsite seat went while they were filling in the form.
+      if (json.onsiteFull) {
+        setOnsiteFull(true);
+        setData((d) => ({ ...d, attendanceMode: '' }));
+      }
       if (!res.ok || !json.ok || !json.ref) {
         if (json.errors && Object.keys(json.errors).length) {
           const firstStep = stepOf(Object.keys(json.errors)[0]);
@@ -503,7 +533,8 @@ export default function RegistrationForm() {
               label="How will you join?"
               required
               className="cards-mode"
-              options={MODE_OPTIONS}
+              options={onsiteFull ? MODE_OPTIONS_FULL : MODE_OPTIONS}
+              hint={onsiteFull ? `Onsite is full: all ${EVENT.onsiteSeats} seats are taken. You can still join live on Zoom.` : undefined}
               value={data.attendanceMode}
               onChange={set('attendanceMode') as (v: string) => void}
               error={errors.attendanceMode}
