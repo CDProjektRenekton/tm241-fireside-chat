@@ -111,33 +111,6 @@
   margin: 18px 0 0;
 }
 
-.feedback-closed {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  text-align: center;
-}
-
-.feedback-closed svg {
-  color: var(--cyan-300);
-}
-
-.feedback-closed h2 {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: 28px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.feedback-closed p {
-  margin: 0;
-  max-width: 46ch;
-  line-height: 1.6;
-  color: var(--ink-2);
-}
-
 /* ---------------------------------------------------------------- scales */
 
 .scale {

@@ -1,15 +1,10 @@
 // The feedback form: its questions, rules and opening time. Shared by the form (instant feedback) and
-// the server (the authority). Finishing it gives the Certificate of Participation.
+// the server (the authority). Finishing it gives the Certificate of Participation. Always open.
 // Part 2 follows the "Leading from the Start Event Evaluation" Google Form, question by question.
-import { EVENT } from './config';
 import { properName } from './names';
 import { parseRef } from './ticket';
 import type { FieldErrors } from './types';
 import { clean, cleanLong, isEmail, LIMITS, MSG } from './validation';
-
-/** Opens by itself when the event starts. Signed-in organizers can always open it to try it. */
-export const FEEDBACK_OPENS_AT = EVENT.startsAt;
-export const feedbackIsOpen = (now = Date.now()) => now >= Date.parse(FEEDBACK_OPENS_AT);
 
 /** Questions 1 and 2: 1 "Not" to 5 "Very much". */
 export const NOT_TO_VERY_MUCH = ['Not', 'Very much'] as const;

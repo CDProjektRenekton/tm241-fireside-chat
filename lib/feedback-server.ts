@@ -2,10 +2,9 @@ import 'server-only';
 import { randomInt } from 'node:crypto';
 import { after, NextResponse } from 'next/server';
 import { AirtableError, ConfigError, findFeedback, listRegistrations, setCertificateEmail, type FeedbackRecord } from './airtable';
-import { isAuthenticated } from './auth';
 import { buildCertificate, certificateFileName } from './certificate';
 import { describeEmailError, emailConfigured, sendCertificateEmail, siteUrl } from './email/send';
-import { feedbackIsOpen, parseWho } from './feedback';
+import { parseWho } from './feedback';
 import { REF_ALPHABET } from './ticket';
 import type { Registration } from './types';
 
@@ -18,16 +17,6 @@ export function failure(where: string, e: unknown) {
   return reply({ message: 'Something went wrong on our side. Please try again.' }, 502);
 }
 
-/**
- * Before it opens, only signed-in organizers can use the form, to try it: nothing is saved, no
- * registration is needed, and the certificate says SAMPLE.
- */
-export async function access(): Promise<'open' | 'preview' | 'closed'> {
-  if (feedbackIsOpen()) return 'open';
-  return (await isAuthenticated()) ? 'preview' : 'closed';
-}
-
-export const CLOSED_MESSAGE = 'The feedback form is not open yet.';
 export const NOT_FOUND_MESSAGE =
   'We couldn’t find a registration with this. Check the spelling, try the other one (email or reference number), or ask the registration desk.';
 

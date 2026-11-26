@@ -88,9 +88,8 @@ pass (the **QR code** for the door when onsite, the **Join on Zoom** button when
 
 ## Feedback and certificates (`/feedback`)
 
-Opens by itself when the event starts (`EVENT.startsAt`); before that it says when. A signed-in organizer can
-open it any time to try it: that saves nothing, the certificate is numbered **FC-COP-SAMPLE**, and only an email
-address typed into the first question gets the sample email.
+Open at all times, before and after the event. Every answer is real: it is saved and the certificate is emailed
+to the registered address (there is no separate try-out mode; to try it, use your own registration).
 
 1. **You:** the registered email or the reference number (it must match a registration), and the name exactly as
    it should be printed. How they joined comes from their registration.

@@ -2,11 +2,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import EventLogo from '@/components/EventLogo';
 import FeedbackForm from '@/components/feedback/FeedbackForm';
-import { Clock } from '@/components/Icons';
 import SpaceBackground from '@/components/SpaceBackground';
 import { EVENT } from '@/lib/config';
-import { FEEDBACK_OPENS_AT } from '@/lib/feedback';
-import { access } from '@/lib/feedback-server';
 import './feedback.css';
 
 export const metadata: Metadata = {
@@ -17,13 +14,8 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const opens = new Date(FEEDBACK_OPENS_AT);
-const opensDay = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', weekday: 'long', month: 'long', day: 'numeric' }).format(opens);
-const opensTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' }).format(opens).replace(/\s/g, '\u00a0');
-
-/** Feedback after the event; finishing it gives the Certificate of Participation. */
+/** The feedback form, open at any time; finishing it gives the Certificate of Participation. */
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ ref?: string | string[] }> }) {
-  const mode = await access();
   const { ref } = await searchParams;
   return (
     <>
@@ -52,17 +44,7 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
           <p>Tell us how it went. It takes about three minutes, and your Certificate of Participation is ready as soon as you finish.</p>
         </section>
 
-        {mode === 'closed' ? (
-          <section className="form-card feedback-closed">
-            <Clock width={30} height={30} />
-            <h2>Not open yet</h2>
-            <p>
-              The feedback form opens on <b>{opensDay}</b> at <b>{opensTime}</b> (Philippine time), when the {EVENT.series} starts.
-            </p>
-          </section>
-        ) : (
-          <FeedbackForm preview={mode === 'preview'} opens={`${opensDay}, ${opensTime}`} initialWho={typeof ref === 'string' ? ref.slice(0, 40) : ''} />
-        )}
+        <FeedbackForm initialWho={typeof ref === 'string' ? ref.slice(0, 40) : ''} />
 
         <footer className="page-foot">
           <p className="foot-tagline">{EVENT.tagline}</p>

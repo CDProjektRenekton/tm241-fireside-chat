@@ -1,5 +1,5 @@
 import { setCertificateEmail } from '@/lib/airtable';
-import { access, certificateFile, CLOSED_MESSAGE, failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, queueCertificateEmail, reply } from '@/lib/feedback-server';
+import { certificateFile, failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, queueCertificateEmail, reply } from '@/lib/feedback-server';
 import { maskEmail } from '@/lib/ticket';
 
 export const runtime = 'nodejs';
@@ -15,7 +15,6 @@ const WAIT_MS = 10 * 60_000;
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { who?: unknown };
   try {
-    if ((await access()) !== 'open') return reply({ message: CLOSED_MESSAGE, closed: true }, 403);
     const person = await findPerson(typeof body.who === 'string' ? body.who.slice(0, 254) : '');
     if (!person) return reply({ message: NOT_FOUND_MESSAGE }, 404);
     const done = await feedbackOf(person);

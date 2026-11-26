@@ -19,7 +19,7 @@ import {
 import type { FieldErrors } from '@/lib/types';
 import { LIMITS } from '@/lib/validation';
 import { CardChoice, fieldId, TextField } from '../form/Fields';
-import { Alert, ArrowLeft, ArrowRight, Check, Download, Info, Mail, Message, Shield, User } from '../Icons';
+import { Alert, ArrowLeft, ArrowRight, Check, Download, Mail, Message, Shield, User } from '../Icons';
 import { ChoiceGrid, ScaleField, StarRating } from './Scales';
 
 const DRAFT_KEY = 'tm241-fc-feedback-draft-v2';
@@ -55,7 +55,6 @@ interface Certificate {
   /** It was emailed only minutes ago, so it was not sent again. */
   recently?: string;
   again?: boolean;
-  preview?: boolean;
 }
 
 type Answered = { email: string; by: 'email' | 'ref' };
@@ -80,7 +79,7 @@ async function post<T>(path: string, body: object): Promise<{ status: number; js
 
 const oops = (e: unknown) => (e instanceof TypeError ? 'Network error — please check your connection and try again.' : (e as Error).message);
 
-export default function FeedbackForm({ preview, opens, initialWho }: { preview: boolean; opens: string; initialWho: string }) {
+export default function FeedbackForm({ initialWho }: { initialWho: string }) {
   const [data, setData] = useState<FeedbackInput>(() => ({ ...EMPTY_FEEDBACK, who: initialWho }));
   const [stage, setStage] = useState<Stage>(1);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -108,14 +107,14 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
 
   // A personal link (…/feedback?ref=TM241-FC-…) fills in the name they registered with.
   useEffect(() => {
-    if (!initialWho || preview) return;
+    if (!initialWho) return;
     void post<{ ok?: boolean; name?: string }>('/api/feedback/check', { who: initialWho })
       .then(({ json }) => {
         if (!json.ok || !json.name) return;
         setData((d) => ({ ...d, name: d.name || json.name!.slice(0, NAME_MAX) }));
       })
       .catch(() => {});
-  }, [initialWho, preview]);
+  }, [initialWho]);
 
   useEffect(() => {
     if (!loaded.current || certificate) return;
@@ -209,7 +208,7 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
       }
       throw new Error(json.message || 'Your feedback could not be sent. Please try again.');
     }
-    setCertificate({ number: json.number, name: json.name, email: json.email, file: json.file, preview: json.preview });
+    setCertificate({ number: json.number, name: json.name, email: json.email, file: json.file });
     try {
       sessionStorage.removeItem(DRAFT_KEY);
     } catch {
@@ -302,20 +301,12 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
                 <>
                   We emailed it to <b>{c.recently}</b> a few minutes ago. Please check Promotions or Spam.
                 </>
-              ) : c.preview ? (
-                'Not emailed: a try-out only emails an address typed into the first question.'
               ) : (
                 'We couldn’t email it just now, so please download it here.'
               )}
             </div>
           </li>
         </ul>
-        {c.preview && (
-          <p className="callout callout-info">
-            <Info />
-            <span>This was a preview: nothing was saved, and the certificate says SAMPLE.</span>
-          </p>
-        )}
       </section>
     );
   }
@@ -356,15 +347,6 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
   const progress = ((stage - 1) / (STAGES.length - 1)) * 100;
   return (
     <section className="form-card" ref={cardRef} aria-labelledby="feedback-title">
-      {preview && (
-        <p className="callout callout-info">
-          <Info />
-          <span>
-            Organizer preview. The form opens to everyone on {opens}.
-            <small>Nothing you send here is saved. Type your own email to receive the sample certificate.</small>
-          </span>
-        </p>
-      )}
       <div className="form-card-head">
         <p className="form-kicker">
           <Message width={16} height={16} />

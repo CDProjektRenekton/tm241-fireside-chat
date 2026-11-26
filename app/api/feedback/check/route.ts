@@ -1,5 +1,5 @@
 import { parseWho } from '@/lib/feedback';
-import { access, CLOSED_MESSAGE, failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, reply } from '@/lib/feedback-server';
+import { failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, reply } from '@/lib/feedback-server';
 import { maskEmail } from '@/lib/ticket';
 
 export const runtime = 'nodejs';
@@ -14,9 +14,6 @@ export async function POST(req: Request) {
   const who = typeof body.who === 'string' ? body.who.slice(0, 254) : '';
   if (!parseWho(who)) return reply({ message: 'Please enter the email you registered with, or your reference number.' }, 400);
   try {
-    const mode = await access();
-    if (mode === 'closed') return reply({ message: CLOSED_MESSAGE, closed: true }, 403);
-    if (mode === 'preview') return reply({ ok: true, preview: true });
     const person = await findPerson(who);
     if (!person) return reply({ message: NOT_FOUND_MESSAGE, notFound: true }, 404);
     const answered = await feedbackOf(person);

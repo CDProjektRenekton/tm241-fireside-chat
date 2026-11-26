@@ -1,11 +1,9 @@
 import { createFeedback } from '@/lib/airtable';
 import { FB } from '@/lib/fields';
 import { attendanceModeOf } from '@/lib/config';
-import { FACILITATION, normalizeFeedback, parseWho, SESSIONS, validateFeedback } from '@/lib/feedback';
+import { FACILITATION, normalizeFeedback, SESSIONS, validateFeedback } from '@/lib/feedback';
 import {
-  access,
   certificateFile,
-  CLOSED_MESSAGE,
   failure,
   feedbackOf,
   findPerson,
@@ -38,19 +36,6 @@ export async function POST(req: Request) {
   if (Object.keys(errors).length) return reply({ message: 'Please check the highlighted answers.', errors }, 400);
 
   try {
-    const mode = await access();
-    if (mode === 'closed') return reply({ message: CLOSED_MESSAGE, closed: true }, 403);
-
-    if (mode === 'preview') {
-      // An organizer trying the form before it opens: nothing is saved, and only an address they typed gets the sample.
-      const sample = { name: d.name, number: 'FC-COP-SAMPLE' };
-      const { pdf, file } = await certificateFile(sample);
-      const who = parseWho(d.who);
-      const email = who?.by === 'email' ? who.value : '';
-      const emailed = queueCertificateEmail({ ...sample, email }, pdf, req);
-      return reply({ ok: true, preview: true, ...sample, email: emailed ? maskEmail(email) : null, file });
-    }
-
     const person = await findPerson(d.who);
     if (!person) return reply({ message: NOT_FOUND_MESSAGE, errors: { who: NOT_FOUND_MESSAGE } }, 404);
     const before = await feedbackOf(person);
