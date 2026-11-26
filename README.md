@@ -68,6 +68,14 @@ had, so nobody gets the same update twice, even if the page closes or two organi
 daily limit is reached it stops and the rest stay in line. Once an update has started going out its words are
 locked; use it as a new draft instead.
 
+## Moving someone between onsite and online
+
+On the dashboard, **View details** → **Move to onsite** / **Move to online**. It asks first, then changes their
+**Attendance Mode** in Airtable and, if the box is ticked, emails them the change: a Was/Now box, their new boarding
+pass (the **QR code** for the door when onsite, the **Join on Zoom** button when online) and a new calendar invite.
+**Preview the email** shows it before anything happens. If the email can't be sent, the move still stands and
+**Try the email again** appears. Untick the box to move someone without emailing them.
+
 ## Feedback and certificates (`/feedback`)
 
 Opens by itself when the event starts (`EVENT.startsAt`); before that it says when. A signed-in organizer can
@@ -226,6 +234,7 @@ Two more tables are kept in the same base: **Email Updates** and **Feedback**.
 | Boarding pass, calendar invite, liftoff animation | `components/form/MissionPass.tsx` |
 | QR code on the pass | `components/TicketQR.tsx`; reference-number rules in `lib/ticket.ts` |
 | Check-in desk (scanner, results, search) | `components/checkin/` + `app/checkin/checkin.css`; API in `app/api/checkin/route.ts` |
+| Email when someone is moved between onsite and online | `lib/mode-switch.ts`; route `app/api/email/switch/route.ts` |
 | Confirmation email (layout, wording) | `lib/email/template.ts`; sending in `lib/email/send.ts` |
 | Email header art and icons | `public/email/` (`hero.jpg` is 1200 × 680, shown at 600 px wide) |
 | Feedback questions, opening time | `lib/feedback.ts`; form in `components/feedback/`, look in `app/feedback/feedback.css` |

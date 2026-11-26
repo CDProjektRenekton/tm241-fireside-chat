@@ -570,7 +570,12 @@ export default function Dashboard() {
                 <h2>Registrations</h2>
                 <p>{plural(filtered.length, 'registration', 'registrations')} · newest first by default. Click a column to sort.</p>
               </header>
-              <ResponsesTable rows={filtered} dupKeys={dupKeys} showAll={false} />
+              <ResponsesTable
+                rows={filtered}
+                dupKeys={dupKeys}
+                showAll={false}
+                onChanged={(r) => setPayload((p) => (p ? { ...p, records: p.records.map((x) => (x.id === r.id ? r : x)) } : p))}
+              />
             </section>
           </>
         )}

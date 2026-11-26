@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { findById } from '@/lib/airtable';
 import { isAuthenticated } from '@/lib/auth';
-import { previewTicketEmail, siteUrl, ticketDataFrom } from '@/lib/email/send';
+import { previewModeSwitchEmail, previewTicketEmail, siteUrl, ticketDataFrom } from '@/lib/email/send';
 import type { TicketEmailData } from '@/lib/email/parts';
 import { zoomJoinUrl } from '@/lib/zoom';
 
@@ -21,7 +21,8 @@ const SAMPLE: TicketEmailData = {
 /**
  * The confirmation email as a web page, for organizers: /api/email/preview shows it with sample
  * details (?mode=online for the online version), /api/email/preview?id=rec… with a real
- * registrant's. Dashboard sign-in required.
+ * registrant's. Add &switch=Onsite or &switch=Online for the email they would get when moved there.
+ * Dashboard sign-in required.
  */
 export async function GET(req: Request) {
   if (!(await isAuthenticated())) {
@@ -36,7 +37,11 @@ export async function GET(req: Request) {
     if (!reg) return NextResponse.json({ message: 'Registration not found.' }, { status: 404 });
     data = ticketDataFrom(reg);
   }
-  const { subject, html } = await previewTicketEmail(data, siteUrl(req));
+  const to = params.get('switch')?.toLowerCase();
+  if (to === 'onsite' || to === 'online') {
+    data = { ...data, attendanceMode: to === 'online' ? 'Online' : 'Onsite', joinUrl: to === 'online' ? zoomJoinUrl() : null };
+  }
+  const { subject, html } = to === 'onsite' || to === 'online' ? await previewModeSwitchEmail(data, siteUrl(req)) : await previewTicketEmail(data, siteUrl(req));
   // Show the subject line above the email, the way a mail app would.
   const banner = `<div style="font:13px/1.5 system-ui,sans-serif;color:#b8c3e6;background:#0d1140;padding:10px 16px;border-bottom:1px solid #2b3a78">
     <b style="color:#fff">Email preview</b>${id ? '' : ' (sample details)'} &middot; Subject: ${subject.replace(/</g, '&lt;')}</div>`;

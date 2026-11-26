@@ -1375,6 +1375,62 @@ a.head-btn {
   overflow-wrap: anywhere;
 }
 
+/* moving someone between onsite and online */
+.mode-switch {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mode-switch .status {
+  justify-self: start;
+  white-space: normal;
+}
+
+.mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mode-confirm p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mode-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.mode-check input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--cyan-300);
+}
+
+.mode-preview {
+  font-size: 13px;
+  color: var(--cyan-200);
+}
+
 .detail-grid .prose {
   white-space: pre-line;
 }

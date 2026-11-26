@@ -15,6 +15,7 @@ import { isOnline, type EmailImage, type TicketEmailData } from './parts';
 import { emailImagesFor, renderTicketEmail } from './template';
 import { CERTIFICATE_IMAGES, renderCertificateEmail, type CertificateEmailData } from './certificate';
 import { renderUpdateEmail, updateImagesFor } from './update';
+import { modeSwitchUpdate } from '../mode-switch';
 
 /**
  * The confirmation email goes out through any SMTP mail account. Gmail is the default:
@@ -203,6 +204,11 @@ export function sendUpdateEmail(u: UpdateContent, d: TicketEmailData, opts: { si
   return deliver(d, mail, { images: updateImagesFor(u, d), invite: u.attachInvite, to: opts.to });
 }
 
+/** Someone an organizer moved between onsite and online: the change, their new boarding pass and invite. */
+export function sendModeSwitchEmail(d: TicketEmailData, opts: { siteUrl: string }) {
+  return sendUpdateEmail(modeSwitchUpdate(isOnline(d) ? 'Online' : 'Onsite'), d, opts);
+}
+
 /** Sends the Certificate of Participation, with the PDF attached. Throws when the mail server refuses it. */
 export function sendCertificateEmail(c: CertificateEmailData, pdf: Buffer, opts: { siteUrl: string }) {
   const d: TicketEmailData = { ref: c.number, name: c.name, email: c.email, organization: '', affiliation: '' };
@@ -240,6 +246,16 @@ export function queueTicketEmail(d: TicketEmailData, req: Request) {
 export async function previewTicketEmail(d: TicketEmailData, url: string) {
   const img = await images(emailImagesFor(d), d.ref);
   return renderTicketEmail(d, {
+    siteUrl: url,
+    src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
+  });
+}
+
+/** HTML of the onsite/online switch email for the dashboard's preview, with the images inlined. */
+export async function previewModeSwitchEmail(d: TicketEmailData, url: string) {
+  const u = modeSwitchUpdate(isOnline(d) ? 'Online' : 'Onsite');
+  const img = await images(updateImagesFor(u, d), d.ref);
+  return renderUpdateEmail(u, d, {
     siteUrl: url,
     src: (n) => `data:${img[n].type};base64,${img[n].content.toString('base64')}`,
   });

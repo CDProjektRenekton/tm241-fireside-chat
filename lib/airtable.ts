@@ -359,6 +359,24 @@ export async function setAttendance(id: string, attended: boolean): Promise<Regi
   }
 }
 
+/** Moves a registration between onsite and online ("Attendance Mode"). */
+export async function setAttendanceMode(id: string, mode: 'Onsite' | 'Online'): Promise<Registration> {
+  if (!RECORD_ID.test(id)) throw new AirtableError(404, 'NOT_FOUND', 'Unknown record.');
+  const { baseId, table } = config();
+  const patch = (tableKey: string) =>
+    request<AirtableRecord>(`/${baseId}/${encodeURIComponent(tableKey)}/${id}`, {
+      method: 'PATCH',
+      body: { fields: { [F.attendanceMode]: mode } },
+    });
+  try {
+    return toRegistration(await patch(table));
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    const report = await ensureSchema();
+    return toRegistration(await patch(report.tableId));
+  }
+}
+
 /** Writes the Email Log of up to 10 registrations. Creates the column first if it is missing. */
 export async function saveEmailLogs(logs: { id: string; log: string }[]): Promise<void> {
   if (!logs.length) return;

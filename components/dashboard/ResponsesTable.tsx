@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { attendanceModeOf, TOPIC_SHORT, type Topic } from '@/lib/config';
+import { attendanceModeOf, type AttendanceMode, TOPIC_SHORT, type Topic } from '@/lib/config';
 import { detailText, questionsFor } from '@/lib/roles';
 import { affiliationLabel, duplicateKey, formatDateTime } from '@/lib/stats';
 import type { Registration } from '@/lib/types';
-import { Alert, Check, ChevronDown, Mail, Message, Video, X } from '../Icons';
+import { Alert, Check, ChevronDown, Mail, MapPin, Message, Video, X } from '../Icons';
 
 type SortKey = 'submittedAt' | 'name' | 'organization' | 'affiliation';
 const PAGE_SIZE = 20;
@@ -60,6 +60,109 @@ function EmailActions({ reg }: { reg: Registration }) {
   );
 }
 
+type SwitchResult = { registration?: Registration; email?: 'Sent' | 'Failed' | 'Skipped'; to?: string; message?: string };
+
+/**
+ * Moves a registrant between onsite and online, and (if ticked) emails them the change with their new
+ * boarding pass: the QR code for the door, or the Join on Zoom button.
+ */
+function ModeSwitch({ reg, onChanged }: { reg: Registration; onChanged: (r: Registration) => void }) {
+  const current = attendanceModeOf(reg);
+  const target: AttendanceMode = current === 'Online' ? 'Onsite' : 'Online';
+  const [asking, setAsking] = useState(false);
+  const [notify, setNotify] = useState(Boolean(reg.email));
+  const [state, setState] = useState<{ status: 'idle' | 'busy' | 'done' | 'warn' | 'error'; message?: string; retry?: boolean }>({ status: 'idle' });
+  const busy = state.status === 'busy';
+  const lower = (m: AttendanceMode) => m.toLowerCase();
+
+  async function run(body: object) {
+    setState({ status: 'busy' });
+    try {
+      const res = await fetch('/api/email/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: reg.id, ...body }) });
+      const json = (await res.json().catch(() => ({}))) as SwitchResult;
+      if (json.registration) onChanged(json.registration);
+      if (!res.ok) throw new Error(json.message || 'Something went wrong. Try again.');
+      const now = attendanceModeOf(json.registration ?? reg);
+      const what = now === 'Online' ? 'the Zoom link' : 'their new boarding pass with the QR code';
+      if (json.email === 'Sent') setState({ status: 'done', message: `Now ${lower(now)}. Emailed ${what} to ${json.to ?? reg.email}.` });
+      else if (json.email === 'Skipped') setState({ status: 'done', message: `Now ${lower(now)}. No email was sent.` });
+      else setState({ status: 'warn', message: `Now ${lower(now)}, but the email was not sent: ${json.message ?? 'unknown error'}`, retry: Boolean(reg.email) });
+      setAsking(false);
+    } catch (e) {
+      setState({ status: 'error', message: e instanceof Error ? e.message : 'Something went wrong. Try again.' });
+    }
+  }
+
+  const word = reg.name.trim().split(/\s+/)[0] ?? '';
+  const first = word ? word[0].toUpperCase() + word.slice(1) : 'They';
+  return (
+    <div className="mode-switch">
+      {!asking && (
+        <div className="mode-row">
+          <button
+            type="button"
+            className="btn-mini"
+            disabled={busy}
+            onClick={() => {
+              setNotify(Boolean(reg.email));
+              setState({ status: 'idle' });
+              setAsking(true);
+            }}
+          >
+            {target === 'Online' ? <Video width={15} height={15} /> : <MapPin width={15} height={15} />}
+            Move to {lower(target)}
+          </button>
+          {state.retry && (
+            <button type="button" className="btn-mini" disabled={busy} onClick={() => run({ resend: true })}>
+              <Mail width={15} height={15} />
+              {busy ? 'Sending…' : 'Try the email again'}
+            </button>
+          )}
+        </div>
+      )}
+      {asking && (
+        <div className="mode-confirm" role="group" aria-label={`Move to ${lower(target)}`}>
+          <p>
+            <b>Move {reg.name || 'this registrant'} to {lower(target)}?</b>{' '}
+            {target === 'Onsite'
+              ? `${first} will need the QR code on a new boarding pass to get in at the door.`
+              : `${first} will join on Zoom instead, so the QR code is no longer needed.`}
+          </p>
+          <label className="mode-check">
+            <input type="checkbox" checked={notify} disabled={!reg.email || busy} onChange={(e) => setNotify(e.target.checked)} />
+            <span>
+              {reg.email ? (
+                <>
+                  Email {target === 'Onsite' ? 'the new boarding pass with the QR code' : 'the Zoom link'} to <b>{reg.email}</b>
+                </>
+              ) : (
+                'No email address on this registration'
+              )}
+            </span>
+          </label>
+          <div className="mode-row">
+            <button type="button" className="btn-mini btn-mini-solid" disabled={busy} onClick={() => run({ mode: target, notify })}>
+              {busy ? 'Saving…' : notify ? `Move and email` : `Move to ${lower(target)}`}
+            </button>
+            <button type="button" className="btn-mini" disabled={busy} onClick={() => setAsking(false)}>
+              Cancel
+            </button>
+            <a className="mode-preview" href={`/api/email/preview?id=${encodeURIComponent(reg.id)}&switch=${target}`} target="_blank" rel="noopener">
+              Preview the email
+            </a>
+          </div>
+        </div>
+      )}
+      {state.message && (
+        <span className={`status ${state.status === 'done' ? 'status-good' : 'status-warning'}`} role="status">
+          {state.status === 'done' ? <Check width={13} height={13} /> : <Alert width={13} height={13} />}
+          {state.message}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function OnlineBadge() {
   return (
     <span className="status status-online" title="Joining online — gets the Zoom link instead of a QR code">
@@ -82,10 +185,13 @@ export default function ResponsesTable({
   rows,
   dupKeys,
   showAll,
+  onChanged,
 }: {
   rows: Registration[];
   dupKeys: Set<string>;
   showAll: boolean;
+  /** A registration was changed here (e.g. moved between onsite and online). */
+  onChanged?: (r: Registration) => void;
 }) {
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'submittedAt', dir: -1 });
   const [page, setPage] = useState(0);
@@ -236,10 +342,18 @@ export default function ResponsesTable({
                 <dt>Joining</dt>
                 <dd>
                   {selected.attendanceMode === 'Online'
-                    ? 'Online, on Zoom (their email has the Zoom link)'
+                    ? 'Online, on Zoom'
                     : selected.attendanceMode === 'Onsite'
-                      ? 'Onsite (their email has the QR code)'
+                      ? 'Onsite, with the QR code'
                       : 'Onsite (registered before this question was added)'}
+                  <ModeSwitch
+                    key={selected.id}
+                    reg={selected}
+                    onChanged={(r) => {
+                      setSelected(r);
+                      onChanged?.(r);
+                    }}
+                  />
                 </dd>
               </div>
               <div>
