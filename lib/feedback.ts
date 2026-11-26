@@ -1,6 +1,7 @@
 // The feedback form: its questions, rules and opening time. Shared by the form (instant feedback) and
 // the server (the authority). Finishing it gives the Certificate of Participation.
 import { ATTENDANCE_MODES, EVENT, TOPICS, type AttendanceMode } from './config';
+import { properName } from './names';
 import { parseRef } from './ticket';
 import type { FieldErrors } from './types';
 import { clean, cleanLong, isEmail, LIMITS, MSG } from './validation';
@@ -146,7 +147,7 @@ export function normalizeFeedback(body: unknown): FeedbackInput {
   const chosen = Array.isArray(b.topics) ? [...new Set(b.topics.slice(0, TOPICS.length + 2).map((t) => clean(t)))].filter(Boolean) : [];
   return {
     who: clean(b.who, 254),
-    name: clean(b.name, NAME_MAX),
+    name: properName(clean(b.name, NAME_MAX)),
     mode: clean(b.mode) as FeedbackInput['mode'],
     overall: clean(b.overall, 2),
     relevance: clean(b.relevance, 2),

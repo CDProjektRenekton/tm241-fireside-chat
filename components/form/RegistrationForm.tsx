@@ -32,6 +32,7 @@ import {
 } from '../Icons';
 import CardSweep from '../CardSweep';
 import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from './Fields';
+import { properName } from '@/lib/names';
 import { CopyRef, downloadInvite, Liftoff, MissionPass } from './MissionPass';
 import RoleDetails from './RoleDetails';
 
@@ -228,7 +229,7 @@ export default function RegistrationForm() {
       }
       setResult({
         ref: json.ref,
-        data,
+        data: { ...data, name: properName(data.name) },
         emailed: Boolean(json.emailed),
         joinUrl: data.attendanceMode === 'Online' && json.joinUrl ? json.joinUrl : null,
       });
@@ -576,7 +577,7 @@ export default function RegistrationForm() {
               <p>One last check before liftoff — here is a preview of your boarding pass.</p>
             </header>
 
-            <MissionPass data={data} />
+            <MissionPass data={{ ...data, name: properName(data.name) }} />
             <div className="review-edit">
               <button type="button" className="btn btn-text btn-sm" onClick={() => goTo(1)}>
                 <Pencil width={16} height={16} />

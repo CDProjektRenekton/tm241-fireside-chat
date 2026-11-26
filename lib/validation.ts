@@ -1,5 +1,6 @@
 // Shared by the form (instant feedback) and /api/submit (the authority).
 import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, SEXES, TOPICS } from './config';
+import { properName } from './names';
 import { EMPTY_DETAILS, questionsFor, YEARS_MAX } from './roles';
 import type { FieldErrors, RegistrationInput } from './types';
 
@@ -132,7 +133,7 @@ export function normalizeInput(body: unknown): RegistrationInput {
   }
   return {
     ...details,
-    name: clean(b.name, LIMITS.name),
+    name: properName(clean(b.name, LIMITS.name)),
     sex: clean(b.sex) as RegistrationInput['sex'],
     ageGroup: clean(b.ageGroup) as RegistrationInput['ageGroup'],
     email: clean(b.email).toLowerCase(),
