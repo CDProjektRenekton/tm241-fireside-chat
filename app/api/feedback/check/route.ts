@@ -1,4 +1,3 @@
-import { attendanceModeOf } from '@/lib/config';
 import { parseWho } from '@/lib/feedback';
 import { access, CLOSED_MESSAGE, failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, reply } from '@/lib/feedback-server';
 import { maskEmail } from '@/lib/ticket';
@@ -8,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Is this someone who registered, and have they answered already? Only a reference number (which just
- * they and the organizers have) brings back the registered name and how they said they'd join.
+ * they and the organizers have) brings back the registered name.
  */
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { who?: unknown };
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
       ok: true,
       answered: Boolean(answered),
       ...(answered ? { email: maskEmail(answered.email || person.reg.email), by: person.by } : {}),
-      ...(person.by === 'ref' ? { name: person.reg.name, mode: attendanceModeOf(person.reg) } : {}),
+      ...(person.by === 'ref' ? { name: person.reg.name } : {}),
     });
   } catch (e) {
     return failure('feedback/check', e);

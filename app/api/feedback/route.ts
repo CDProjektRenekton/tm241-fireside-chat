@@ -1,6 +1,7 @@
 import { createFeedback } from '@/lib/airtable';
 import { FB } from '@/lib/fields';
-import { normalizeFeedback, parseWho, STATEMENTS, validateFeedback } from '@/lib/feedback';
+import { attendanceModeOf } from '@/lib/config';
+import { FACILITATION, normalizeFeedback, parseWho, SESSIONS, validateFeedback } from '@/lib/feedback';
 import {
   access,
   certificateFile,
@@ -64,16 +65,16 @@ export async function POST(req: Request) {
       [FB.name]: d.name,
       [FB.registeredName]: reg.name,
       [FB.email]: reg.email,
-      [FB.mode]: d.mode,
+      [FB.mode]: attendanceModeOf(reg),
       [FB.checkedIn]: reg.attended,
+      [FB.satisfied]: Number(d.satisfied),
+      [FB.relevant]: Number(d.relevant),
+      [FB.takeaways]: d.takeaways,
+      ...Object.fromEntries(FACILITATION.map((r) => [FB[r.key], d[r.key]])),
+      [FB.facilitationNotes]: d.facilitationNotes,
+      ...Object.fromEntries(SESSIONS.map((r) => [FB[r.key], d[r.key]])),
       [FB.overall]: Number(d.overall),
-      ...Object.fromEntries(STATEMENTS.map((s) => [FB[s.key], Number(d[s.key])])),
-      [FB.recommend]: Number(d.recommend),
-      [FB.takeaway]: d.takeaway,
-      [FB.improve]: d.improve,
-      [FB.topics]: d.topics,
-      [FB.topicsOther]: d.topicsOther,
-      [FB.share]: d.share,
+      [FB.overallFeedback]: d.overallFeedback,
       [FB.consent]: 'Yes',
     };
     for (const k of Object.keys(fields)) {

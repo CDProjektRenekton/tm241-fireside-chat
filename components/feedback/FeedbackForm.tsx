@@ -1,49 +1,48 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { EVENT, TOPICS } from '@/lib/config';
+import { useEffect, useRef, useState } from 'react';
+import { EVENT } from '@/lib/config';
 import {
-  AGREE_LABELS,
+  DISSATISFIED_TO_SATISFIED,
   EMPTY_FEEDBACK,
+  FACILITATION,
+  FACILITATION_VALUES,
   FEEDBACK_VALIDATORS,
   feedbackStageOf,
   type FeedbackInput,
   NAME_MAX,
-  RATING_LABELS,
-  RECOMMEND_MAX,
-  STATEMENTS,
+  NOT_TO_VERY_MUCH,
+  SESSION_VALUES,
+  SESSIONS,
   validateFeedback,
 } from '@/lib/feedback';
 import type { FieldErrors } from '@/lib/types';
 import { LIMITS } from '@/lib/validation';
-import { CardChoice, ChipChoice, fieldId, PillChoice, TextField } from '../form/Fields';
-import { Alert, ArrowLeft, ArrowRight, Check, Download, Info, Mail, MapPin, Message, Shield, User, ZoomLogo } from '../Icons';
-import { AgreeGrid, ScaleField } from './Scales';
+import { CardChoice, fieldId, TextField } from '../form/Fields';
+import { Alert, ArrowLeft, ArrowRight, Check, Download, Info, Mail, Message, Shield, User } from '../Icons';
+import { ChoiceGrid, ScaleField, StarRating } from './Scales';
 
-const DRAFT_KEY = 'tm241-fc-feedback-draft-v1';
+const DRAFT_KEY = 'tm241-fc-feedback-draft-v2';
 
-const MODE_OPTIONS = [
-  { value: 'Onsite', label: 'Onsite', sub: 'At UP Diliman', icon: <MapPin /> },
-  { value: 'Online', label: 'Online', sub: 'On Zoom', icon: <ZoomLogo /> },
-];
 const CONSENT_OPTIONS = [
   { value: 'Yes', label: 'Yes', sub: 'I give my consent', icon: <Check /> },
   { value: 'No', label: 'No', sub: 'I do not consent', icon: <Alert /> },
 ];
-const SHARE_OPTIONS = [
-  { value: 'Yes', label: 'Yes, without my name' },
-  { value: 'No', label: 'No, please keep them private' },
-];
-const RATING_OPTIONS = RATING_LABELS.map((label, i) => ({ value: String(i + 1), label }));
-const RECOMMEND_OPTIONS = Array.from({ length: RECOMMEND_MAX + 1 }, (_, i) => ({ value: String(i), label: String(i) }));
-const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
+/** Questions 1 and 2: 1 "Not" to 5 "Very much". */
+const NOT_OPTIONS = ['1', '2', '3', '4', '5'].map((v, i) => ({ value: v, label: i === 0 ? NOT_TO_VERY_MUCH[0] : i === 4 ? NOT_TO_VERY_MUCH[1] : v }));
+const FACILITATION_COLUMNS = FACILITATION_VALUES.map((v) => ({
+  value: v,
+  label: v === '1' ? '1, Very dissatisfied' : v === '5' ? '5, Very satisfied' : v === 'N/A' ? 'N/A' : v,
+  short: v,
+}));
+const SESSION_COLUMNS = SESSION_VALUES.map((v) => ({ value: v, label: v }));
 const ICON_MAIL = <Mail />;
 const ICON_USER = <User />;
 
 const STAGES = [
   { n: 1, title: 'You', sub: 'Your certificate' },
-  { n: 2, title: 'Ratings', sub: 'How it went' },
-  { n: 3, title: 'Your thoughts', sub: 'And consent' },
+  { n: 2, title: 'Evaluation', sub: 'How it went' },
+  { n: 3, title: 'Consent', sub: 'And your certificate' },
 ] as const;
 type Stage = 1 | 2 | 3;
 
@@ -99,7 +98,7 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Partial<FeedbackInput>;
-        setData((d) => ({ ...d, ...saved, who: d.who || saved.who || '', topics: Array.isArray(saved.topics) ? saved.topics : [], consent: '', website: '' }));
+        setData((d) => ({ ...d, ...saved, who: d.who || saved.who || '', consent: '', website: '' }));
       }
     } catch {
       /* storage unavailable — start fresh */
@@ -110,10 +109,10 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
   // A personal link (…/feedback?ref=TM241-FC-…) fills in the name they registered with.
   useEffect(() => {
     if (!initialWho || preview) return;
-    void post<{ ok?: boolean; name?: string; mode?: FeedbackInput['mode'] }>('/api/feedback/check', { who: initialWho })
+    void post<{ ok?: boolean; name?: string }>('/api/feedback/check', { who: initialWho })
       .then(({ json }) => {
         if (!json.ok || !json.name) return;
-        setData((d) => ({ ...d, name: d.name || json.name!.slice(0, NAME_MAX), mode: d.mode || json.mode || '' }));
+        setData((d) => ({ ...d, name: d.name || json.name!.slice(0, NAME_MAX) }));
       })
       .catch(() => {});
   }, [initialWho, preview]);
@@ -143,7 +142,7 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
     return cache[key] as unknown as (v: FeedbackInput[K]) => void;
   };
 
-  const statements = useMemo(() => STATEMENTS.map((s) => ({ key: s.key as string, text: s.text(data.mode) })), [data.mode]);
+  const setRow = (key: string, v: string) => setData((d) => ({ ...d, [key]: v }));
 
   const toTop = () =>
     window.requestAnimationFrame(() => {
@@ -160,7 +159,7 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
       const el = document.getElementById(fieldId(first));
       if (!el) return;
       el.scrollIntoView({ block: 'center' });
-      const target = first === 'statements' ? el.querySelector('.is-missing input') : el.matches('[role=radiogroup], fieldset') ? el.querySelector('input') : el;
+      const target = first === 'facilitation' || first === 'sessions' ? el.querySelector('.is-missing input') : el.matches('[role=radiogroup], fieldset') ? el.querySelector('input') : el;
       ((target as HTMLElement | null) ?? el).focus({ preventScroll: true });
     });
   }
@@ -440,55 +439,107 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
               onChange={set('name')}
               error={errors.name}
             />
-            <CardChoice
-              name="mode"
-              number={3}
-              label="How did you join?"
-              required
-              className="cards-mode"
-              options={MODE_OPTIONS}
-              value={data.mode}
-              onChange={set('mode') as (v: string) => void}
-              error={errors.mode}
-            />
           </div>
         )}
 
         {stage === 2 && (
           <div className="section">
             <header className="section-head">
-              <h3>Your ratings</h3>
+              <h3>Event evaluation</h3>
               <p>There are no wrong answers. Please be honest.</p>
             </header>
             <ScaleField
-              name="overall"
+              name="satisfied"
+              number={3}
+              label="How satisfied were you with the event?"
+              options={NOT_OPTIONS}
+              value={data.satisfied}
+              onChange={set('satisfied')}
+              error={errors.satisfied}
+              ends={NOT_TO_VERY_MUCH}
+            />
+            <ScaleField
+              name="relevant"
               number={4}
-              label={`Overall, how would you rate the ${EVENT.series}?`}
-              options={RATING_OPTIONS}
+              label="How relevant and helpful do you think it was for your role or field?"
+              options={NOT_OPTIONS}
+              value={data.relevant}
+              onChange={set('relevant')}
+              error={errors.relevant}
+              ends={NOT_TO_VERY_MUCH}
+            />
+            <TextField
+              name="takeaways"
+              number={5}
+              label="What were your key takeaways from the fireside chat?"
+              required
+              multiline
+              rows={3}
+              maxLength={LIMITS.long}
+              placeholder="An idea, a lesson, something you’ll try…"
+              value={data.takeaways}
+              onChange={set('takeaways')}
+              error={errors.takeaways}
+            />
+            <ChoiceGrid
+              name="facilitation"
+              number={6}
+              label="How satisfied were you with the event facilitation?"
+              hint={DISSATISFIED_TO_SATISFIED}
+              columns={FACILITATION_COLUMNS}
+              rows={FACILITATION}
+              values={data as unknown as Record<string, string>}
+              onChange={setRow}
+              error={errors.facilitation}
+              legend={`${DISSATISFIED_TO_SATISFIED}, or N/A`}
+            />
+            <TextField
+              name="facilitationNotes"
+              number={7}
+              label="Tell us more about your feedback above!"
+              required
+              multiline
+              rows={3}
+              maxLength={LIMITS.long}
+              placeholder="What worked well, and what could be better…"
+              value={data.facilitationNotes}
+              onChange={set('facilitationNotes')}
+              error={errors.facilitationNotes}
+            />
+            <ChoiceGrid
+              name="sessions"
+              number={8}
+              label="Which sessions did you find most relevant?"
+              columns={SESSION_COLUMNS}
+              rows={SESSIONS}
+              values={data as unknown as Record<string, string>}
+              onChange={setRow}
+              error={errors.sessions}
+              legend="Not relevant, Relevant, Very relevant, or Did not attend"
+              wide
+            />
+            <StarRating
+              name="overall"
+              number={9}
+              label="How satisfied were you with the overall fireside chat?"
+              hint={DISSATISFIED_TO_SATISFIED}
               value={data.overall}
               onChange={set('overall')}
               error={errors.overall}
-              ends={[RATING_LABELS[0], RATING_LABELS[4]]}
-              showChosen
+              words={['Very dissatisfied', 'Very satisfied']}
             />
-            <AgreeGrid
-              number={5}
-              label="How much do you agree?"
-              labels={AGREE_LABELS}
-              statements={statements}
-              values={data as unknown as Record<string, string>}
-              onChange={(k, v) => setData((d) => ({ ...d, [k]: v }))}
-              error={errors.statements}
-            />
-            <ScaleField
-              name="recommend"
-              number={6}
-              label="How likely are you to recommend an event like this to a friend or colleague?"
-              options={RECOMMEND_OPTIONS}
-              value={data.recommend}
-              onChange={set('recommend')}
-              error={errors.recommend}
-              ends={['Not at all likely', 'Extremely likely']}
+            <TextField
+              name="overallFeedback"
+              number={10}
+              label="Any overall feedback for the event?"
+              optional
+              multiline
+              rows={3}
+              maxLength={LIMITS.long}
+              placeholder="Anything else you’d like us to know…"
+              value={data.overallFeedback}
+              onChange={set('overallFeedback')}
+              error={errors.overallFeedback}
             />
           </div>
         )}
@@ -496,70 +547,9 @@ export default function FeedbackForm({ preview, opens, initialWho }: { preview: 
         {stage === 3 && (
           <div className="section">
             <header className="section-head">
-              <h3>Your thoughts</h3>
-              <p>A sentence or two is plenty.</p>
+              <h3>Consent</h3>
+              <p>One last step, and your certificate is ready.</p>
             </header>
-            <TextField
-              name="takeaway"
-              number={7}
-              label="What was your most valuable takeaway?"
-              required
-              multiline
-              rows={3}
-              maxLength={LIMITS.long}
-              placeholder="An idea, a lesson, something you’ll try…"
-              value={data.takeaway}
-              onChange={set('takeaway')}
-              error={errors.takeaway}
-            />
-            <TextField
-              name="improve"
-              number={8}
-              label="What could we do better next time?"
-              optional
-              multiline
-              rows={3}
-              maxLength={LIMITS.long}
-              placeholder="Anything that would have made it better for you…"
-              value={data.improve}
-              onChange={set('improve')}
-              error={errors.improve}
-            />
-            <ChipChoice
-              name="topics"
-              number={9}
-              label="Which topics would you like in future talks?"
-              hint="Check all that apply."
-              optional
-              options={TOPIC_OPTIONS}
-              values={data.topics}
-              onChange={set('topics')}
-              error={errors.topics}
-            >
-              {data.topics.includes('Other') && (
-                <div className="other-box">
-                  <TextField
-                    name="topicsOther"
-                    label="Other topic"
-                    bare
-                    placeholder="What other topic would you like?"
-                    value={data.topicsOther}
-                    onChange={set('topicsOther')}
-                    error={errors.topicsOther}
-                  />
-                </div>
-              )}
-            </ChipChoice>
-            <PillChoice
-              name="share"
-              number={10}
-              label="May we share your comments in reports or posts?"
-              optional
-              options={SHARE_OPTIONS}
-              value={data.share}
-              onChange={set('share') as (v: string) => void}
-              error={errors.share}
-            />
             <div className="consent">
               <div className="consent-head">
                 <Shield />

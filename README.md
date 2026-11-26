@@ -92,16 +92,22 @@ Opens by itself when the event starts (`EVENT.startsAt`); before that it says wh
 open it any time to try it: that saves nothing, the certificate is numbered **FC-COP-SAMPLE**, and only an email
 address typed into the first question gets the sample email.
 
-1. **You:** the registered email or the reference number (it must match a registration), the name exactly as it
-   should be printed, and how they joined.
-2. **Ratings:** overall (1–5), six statements (1–5; the last one is about the venue or Zoom), recommend (0–10).
-3. **Your thoughts:** takeaway, what to improve, topics for next time, may we share the comments, consent.
+1. **You:** the registered email or the reference number (it must match a registration), and the name exactly as
+   it should be printed. How they joined comes from their registration.
+2. **Evaluation:** the eight questions of the *Leading from the Start Event Evaluation* Google Form, in order:
+   satisfied with the event (1 Not – 5 Very much), relevant to their role or field (same scale), key takeaways,
+   the event facilitation (Venue, Registration and Communication, Publicity Materials, Session Content, Program
+   Timeliness, Food and Refreshments: 1–5 or N/A), more about that, how relevant each session was (Not relevant /
+   Relevant / Very relevant / Did not attend), the overall fireside chat (1–5 stars) and any overall feedback
+   (the only optional one).
+3. **Consent:** the data privacy consent.
 
 Then the certificate appears with a **Download** button and is emailed to the **registered** address, never to one
 typed on the form. One answer per person. Coming back later, the email address alone can only have the certificate
 emailed again (at most every ten minutes); the reference number can also download it.
 
-Answers are kept in the Airtable table **Feedback** (made on first use, or by the dashboard's "Create fields now"),
+Answers are kept in the Airtable table **Feedback**, one column per question, numbered like the Google Form
+(made on first use, or by the dashboard's "Create fields now"),
 with the name on the certificate, its number, whether they were checked in, and **Certificate Email**
 (Sending / Sent / Failed / Not set up). For a misspelled name, correct **Name on Certificate** there: the person
 then gets the corrected certificate by opening /feedback with their reference number.

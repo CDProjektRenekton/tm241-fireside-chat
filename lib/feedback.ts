@@ -1,6 +1,7 @@
 // The feedback form: its questions, rules and opening time. Shared by the form (instant feedback) and
 // the server (the authority). Finishing it gives the Certificate of Participation.
-import { ATTENDANCE_MODES, EVENT, TOPICS, type AttendanceMode } from './config';
+// Part 2 follows the "Leading from the Start Event Evaluation" Google Form, question by question.
+import { EVENT } from './config';
 import { properName } from './names';
 import { parseRef } from './ticket';
 import type { FieldErrors } from './types';
@@ -10,42 +11,49 @@ import { clean, cleanLong, isEmail, LIMITS, MSG } from './validation';
 export const FEEDBACK_OPENS_AT = EVENT.startsAt;
 export const feedbackIsOpen = (now = Date.now()) => now >= Date.parse(FEEDBACK_OPENS_AT);
 
-/** 1 (lowest) to 5 (highest). */
-export const RATING_LABELS = ['Poor', 'Fair', 'Good', 'Very good', 'Excellent'] as const;
-export const AGREE_LABELS = ['Strongly disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly agree'] as const;
+/** Questions 1 and 2: 1 "Not" to 5 "Very much". */
+export const NOT_TO_VERY_MUCH = ['Not', 'Very much'] as const;
 
-/** Statements rated from "Strongly disagree" to "Strongly agree". The last one depends on how they joined. */
-export const STATEMENTS = [
-  { key: 'relevance', text: () => 'The topic was relevant to my studies or work.' },
-  { key: 'speaker', text: () => 'The guest speaker explained ideas clearly and kept me engaged.' },
-  { key: 'learning', text: () => 'I learned something I can use.' },
-  { key: 'discussion', text: () => 'The conversation and open questions were meaningful.' },
-  { key: 'organization', text: () => 'The event was well organized, from registration to closing.' },
-  {
-    key: 'setting',
-    text: (mode: string) =>
-      mode === 'Online' ? 'The Zoom session was easy to join, with clear audio and video.' : 'The venue was comfortable and easy to reach.',
-  },
+/** Question 4: each part of the event, 1 (very dissatisfied) to 5 (very satisfied), or N/A. */
+export const FACILITATION = [
+  { key: 'venue', text: 'Venue' },
+  { key: 'registration', text: 'Registration and Communication' },
+  { key: 'publicity', text: 'Publicity Materials' },
+  { key: 'content', text: 'Session Content' },
+  { key: 'timeliness', text: 'Program Timeliness' },
+  { key: 'food', text: 'Food and Refreshments' },
 ] as const;
-export type StatementKey = (typeof STATEMENTS)[number]['key'];
+export type FacilitationKey = (typeof FACILITATION)[number]['key'];
+export const FACILITATION_VALUES = ['1', '2', '3', '4', '5', 'N/A'] as const;
 
-/** 0 (not at all likely) to 10 (extremely likely). */
-export const RECOMMEND_MAX = 10;
+/** Question 6: each session, from not relevant to very relevant (or did not attend). */
+export const SESSIONS = [
+  { key: 'session1', text: 'Session 1: Building National Technological Capabilities' },
+  { key: 'session2', text: 'Session 2: Strengthening Research and National Innovation' },
+] as const;
+export type SessionKey = (typeof SESSIONS)[number]['key'];
+export const SESSION_VALUES = ['Not relevant', 'Relevant', 'Very relevant', 'Did not attend'] as const;
 
-export interface FeedbackInput extends Record<StatementKey, string> {
+/** Questions 4 and 7: what 1 and 5 mean. */
+export const DISSATISFIED_TO_SATISFIED = '1 = Very dissatisfied, 5 = Very satisfied';
+
+export interface FeedbackInput extends Record<FacilitationKey, string>, Record<SessionKey, string> {
   /** The email they registered with, or their reference number. */
   who: string;
   /** As it should be printed on the certificate. */
   name: string;
-  mode: AttendanceMode | '';
+  /** 1. How satisfied were you with the event? (1–5) */
+  satisfied: string;
+  /** 2. How relevant and helpful do you think it was for your role or field? (1–5) */
+  relevant: string;
+  /** 3. What were your key takeaways from the fireside chat? */
+  takeaways: string;
+  /** 5. Tell us more about your feedback above! */
+  facilitationNotes: string;
+  /** 7. How satisfied were you with the overall fireside chat? (1–5 stars) */
   overall: string;
-  recommend: string;
-  takeaway: string;
-  improve: string;
-  topics: string[];
-  topicsOther: string;
-  /** May organizers share their comments without their name? */
-  share: 'Yes' | 'No' | '';
+  /** 8. Any overall feedback for the event? (optional) */
+  overallFeedback: string;
   consent: 'Yes' | 'No' | '';
   /** Honeypot — real people never fill this in. */
   website?: string;
@@ -54,20 +62,20 @@ export interface FeedbackInput extends Record<StatementKey, string> {
 export const EMPTY_FEEDBACK: FeedbackInput = {
   who: '',
   name: '',
-  mode: '',
+  satisfied: '',
+  relevant: '',
+  takeaways: '',
+  venue: '',
+  registration: '',
+  publicity: '',
+  content: '',
+  timeliness: '',
+  food: '',
+  facilitationNotes: '',
+  session1: '',
+  session2: '',
   overall: '',
-  relevance: '',
-  speaker: '',
-  learning: '',
-  discussion: '',
-  organization: '',
-  setting: '',
-  recommend: '',
-  takeaway: '',
-  improve: '',
-  topics: [],
-  topicsOther: '',
-  share: '',
+  overallFeedback: '',
   consent: '',
   website: '',
 };
@@ -78,7 +86,7 @@ const FMSG = {
   who: 'Please enter the email you registered with, or your reference number.',
   name: 'Please use letters A to Z (accents like Ñ and É are fine), so it can be printed.',
   rate: 'Please choose a rating.',
-  rateAll: 'Please rate every statement.',
+  rows: 'Please answer every row.',
 };
 
 /** Letters (with accents), digits, spaces and the punctuation names use. */
@@ -93,7 +101,8 @@ export function parseWho(raw: string): { by: 'email' | 'ref'; value: string } | 
   return ref ? { by: 'ref', value: ref } : null;
 }
 
-const inRange = (v: string, min: number, max: number) => /^\d{1,2}$/.test(v) && Number(v) >= min && Number(v) <= max;
+const oneToFive = (v: string) => /^[1-5]$/.test(v);
+const longText = (v: string, required: boolean) => (required && !v.trim() ? MSG.required : v.length > LIMITS.long ? MSG.tooLong : '');
 
 export function validateFeedback1(d: FeedbackInput): FieldErrors {
   const e: FieldErrors = {};
@@ -103,29 +112,27 @@ export function validateFeedback1(d: FeedbackInput): FieldErrors {
   if (!name) e.name = MSG.required;
   else if (name.length > NAME_MAX) e.name = MSG.tooLong;
   else if (!PRINTABLE_NAME.test(name) || !HAS_LETTER.test(name)) e.name = FMSG.name;
-  if (!ATTENDANCE_MODES.includes(d.mode as never)) e.mode = MSG.choose;
   return e;
 }
 
 export function validateFeedback2(d: FeedbackInput): FieldErrors {
   const e: FieldErrors = {};
-  if (!inRange(d.overall, 1, 5)) e.overall = FMSG.rate;
-  if (STATEMENTS.some((s) => !inRange(d[s.key], 1, 5))) e.statements = FMSG.rateAll;
-  if (!inRange(d.recommend, 0, RECOMMEND_MAX)) e.recommend = FMSG.rate;
+  if (!oneToFive(d.satisfied)) e.satisfied = FMSG.rate;
+  if (!oneToFive(d.relevant)) e.relevant = FMSG.rate;
+  const takeaways = longText(d.takeaways, true);
+  if (takeaways) e.takeaways = takeaways;
+  if (FACILITATION.some((r) => !FACILITATION_VALUES.includes(d[r.key] as never))) e.facilitation = FMSG.rows;
+  const notes = longText(d.facilitationNotes, true);
+  if (notes) e.facilitationNotes = notes;
+  if (SESSIONS.some((r) => !SESSION_VALUES.includes(d[r.key] as never))) e.sessions = FMSG.rows;
+  if (!oneToFive(d.overall)) e.overall = FMSG.rate;
+  const more = longText(d.overallFeedback, false);
+  if (more) e.overallFeedback = more;
   return e;
 }
 
 export function validateFeedback3(d: FeedbackInput): FieldErrors {
   const e: FieldErrors = {};
-  if (!d.takeaway.trim()) e.takeaway = MSG.required;
-  else if (d.takeaway.length > LIMITS.long) e.takeaway = MSG.tooLong;
-  if (d.improve.length > LIMITS.long) e.improve = MSG.tooLong;
-  if (d.topics.some((t) => !TOPICS.includes(t as never))) e.topics = MSG.choose;
-  if (d.topics.includes('Other')) {
-    if (!d.topicsOther.trim()) e.topicsOther = MSG.other;
-    else if (d.topicsOther.length > LIMITS.short) e.topicsOther = MSG.tooLong;
-  }
-  if (d.share && d.share !== 'Yes' && d.share !== 'No') e.share = MSG.choose;
   if (d.consent !== 'Yes') e.consent = d.consent === 'No' ? 'Your consent is required to receive the certificate.' : MSG.choose;
   return e;
 }
@@ -136,32 +143,26 @@ export const validateFeedback = (d: FeedbackInput): FieldErrors => ({ ...validat
 
 /** Which stage (1–3) a field key belongs to, so the form can jump back to it. */
 export function feedbackStageOf(key: string): 1 | 2 | 3 {
-  if (['who', 'name', 'mode'].includes(key)) return 1;
-  if (['overall', 'statements', 'recommend'].includes(key)) return 2;
-  return 3;
+  if (key === 'who' || key === 'name') return 1;
+  if (key === 'consent') return 3;
+  return 2;
 }
 
 /** Coerce an untrusted request body into a FeedbackInput with trimmed strings. */
 export function normalizeFeedback(body: unknown): FeedbackInput {
   const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
-  const chosen = Array.isArray(b.topics) ? [...new Set(b.topics.slice(0, TOPICS.length + 2).map((t) => clean(t)))].filter(Boolean) : [];
+  const pick = (k: string, max = 20) => clean(b[k], max);
   return {
     who: clean(b.who, 254),
     name: properName(clean(b.name, NAME_MAX)),
-    mode: clean(b.mode) as FeedbackInput['mode'],
-    overall: clean(b.overall, 2),
-    relevance: clean(b.relevance, 2),
-    speaker: clean(b.speaker, 2),
-    learning: clean(b.learning, 2),
-    discussion: clean(b.discussion, 2),
-    organization: clean(b.organization, 2),
-    setting: clean(b.setting, 2),
-    recommend: clean(b.recommend, 2),
-    takeaway: cleanLong(b.takeaway),
-    improve: cleanLong(b.improve),
-    topics: [...TOPICS.filter((t) => chosen.includes(t)), ...chosen.filter((t) => !TOPICS.includes(t as never))],
-    topicsOther: chosen.includes('Other') ? clean(b.topicsOther) : '',
-    share: clean(b.share) as FeedbackInput['share'],
+    satisfied: pick('satisfied', 2),
+    relevant: pick('relevant', 2),
+    takeaways: cleanLong(b.takeaways),
+    ...(Object.fromEntries(FACILITATION.map((r) => [r.key, pick(r.key)])) as Record<FacilitationKey, string>),
+    facilitationNotes: cleanLong(b.facilitationNotes),
+    ...(Object.fromEntries(SESSIONS.map((r) => [r.key, pick(r.key)])) as Record<SessionKey, string>),
+    overall: pick('overall', 2),
+    overallFeedback: cleanLong(b.overallFeedback),
     consent: clean(b.consent) as FeedbackInput['consent'],
     website: clean(b.website),
   };

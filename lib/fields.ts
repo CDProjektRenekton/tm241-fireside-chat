@@ -1,4 +1,5 @@
 import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, SEXES, TOPICS } from './config';
+import { FACILITATION_VALUES, SESSION_VALUES } from './feedback';
 import {
   DEGREE_LEVELS,
   type DetailKey,
@@ -233,7 +234,8 @@ const CHECK = { icon: 'check', color: 'greenBright' };
 
 export const FEEDBACK_TABLE = 'Feedback';
 
-/** Column names of the Feedback table (one row per answered feedback form). */
+/** Column names of the Feedback table (one row per answered feedback form). Questions 1 to 8 follow the
+ * "Leading from the Start Event Evaluation" Google Form. */
 export const FB = {
   number: 'Certificate No.',
   submittedAt: 'Submitted At',
@@ -243,19 +245,20 @@ export const FB = {
   email: 'Email',
   mode: 'How They Joined',
   checkedIn: 'Checked In',
-  overall: 'Overall Rating (1-5)',
-  relevance: 'Topic Relevant (1-5)',
-  speaker: 'Speaker Clear and Engaging (1-5)',
-  learning: 'Learned Something Useful (1-5)',
-  discussion: 'Conversation Meaningful (1-5)',
-  organization: 'Well Organized (1-5)',
-  setting: 'Venue or Zoom (1-5)',
-  recommend: 'Would Recommend (0-10)',
-  takeaway: 'Most Valuable Takeaway',
-  improve: 'What Could Be Better',
-  topics: 'Topics for Next Time',
-  topicsOther: 'Topics for Next Time (Other)',
-  share: 'May Share Comments Without Name',
+  satisfied: '1 Satisfied with the Event (1-5)',
+  relevant: '2 Relevant to Role or Field (1-5)',
+  takeaways: '3 Key Takeaways',
+  venue: '4 Venue',
+  registration: '4 Registration and Communication',
+  publicity: '4 Publicity Materials',
+  content: '4 Session Content',
+  timeliness: '4 Program Timeliness',
+  food: '4 Food and Refreshments',
+  facilitationNotes: '5 About the Facilitation',
+  session1: '6 Session 1: Building National Technological Capabilities',
+  session2: '6 Session 2: Strengthening Research and National Innovation',
+  overall: '7 Overall Fireside Chat (1-5)',
+  overallFeedback: '8 Overall Feedback',
   consent: 'Data Privacy Consent',
   certEmail: 'Certificate Email',
   certEmailAt: 'Certificate Emailed At',
@@ -265,6 +268,19 @@ export const CERT_EMAIL_STATES = ['Sending', 'Sent', 'Failed', 'Not set up'] as 
 export type CertEmailState = (typeof CERT_EMAIL_STATES)[number];
 
 const score = (name: string, description: string): FieldSpec => ({ name, type: 'number', description, options: { precision: 0 } });
+const FACILITATION_COLORS = ['redLight2', 'orangeLight2', 'yellowLight2', 'tealLight2', 'greenLight2', 'grayLight2'];
+const facilitation = (name: string): FieldSpec => ({
+  name,
+  type: 'singleSelect',
+  description: 'How satisfied were you with the event facilitation? 1 = Very dissatisfied, 5 = Very satisfied, or N/A.',
+  options: choices(FACILITATION_VALUES, FACILITATION_COLORS),
+});
+const session = (name: string): FieldSpec => ({
+  name,
+  type: 'singleSelect',
+  description: 'Which sessions did you find most relevant?',
+  options: choices(SESSION_VALUES, ['redLight2', 'tealLight2', 'greenLight2', 'grayLight2']),
+});
 
 /** Feedback schema, in column order. The first entry is the primary field. */
 export const FEEDBACK_SPECS: FieldSpec[] = [
@@ -274,21 +290,22 @@ export const FEEDBACK_SPECS: FieldSpec[] = [
   text(FB.name, 'As printed on the certificate.'),
   text(FB.registeredName, 'As typed when registering, to compare with the certificate.'),
   { name: FB.email, type: 'email', description: 'Where the certificate was emailed (from the registration).' },
-  { name: FB.mode, type: 'singleSelect', options: choices(ATTENDANCE_MODES, ['tealLight2', 'purpleLight2']) },
+  { name: FB.mode, type: 'singleSelect', description: 'From their registration.', options: choices(ATTENDANCE_MODES, ['tealLight2', 'purpleLight2']) },
   { name: FB.checkedIn, type: 'checkbox', description: 'Whether the check-in desk had scanned them when they sent this.', options: CHECK },
-  score(FB.overall, 'Overall rating: 1 Poor to 5 Excellent.'),
-  score(FB.relevance, 'The topic was relevant to my studies or work. 1 Strongly disagree to 5 Strongly agree.'),
-  score(FB.speaker, 'The guest speaker explained ideas clearly and kept me engaged.'),
-  score(FB.learning, 'I learned something I can use.'),
-  score(FB.discussion, 'The conversation and open questions were meaningful.'),
-  score(FB.organization, 'The event was well organized, from registration to closing.'),
-  score(FB.setting, 'Onsite: the venue was comfortable and easy to reach. Online: the Zoom session was easy to join, with clear audio and video.'),
-  score(FB.recommend, 'How likely to recommend an event like this: 0 to 10.'),
-  { name: FB.takeaway, type: 'multilineText', description: 'What was your most valuable takeaway?' },
-  { name: FB.improve, type: 'multilineText', description: 'What could we do better next time?' },
-  { name: FB.topics, type: 'multipleSelects', description: 'Which topics would you like in future talks?', options: choices(TOPICS, TOPIC_COLORS) },
-  text(FB.topicsOther, 'Filled in when "Other" is one of the topics.'),
-  { name: FB.share, type: 'singleSelect', description: 'Empty = did not answer, so do not share.', options: choices(['Yes', 'No'], ['greenLight2', 'redLight2']) },
+  score(FB.satisfied, 'How satisfied were you with the event? 1 Not to 5 Very much.'),
+  score(FB.relevant, 'How relevant and helpful do you think it was for your role or field? 1 Not to 5 Very much.'),
+  { name: FB.takeaways, type: 'multilineText', description: 'What were your key takeaways from the fireside chat?' },
+  facilitation(FB.venue),
+  facilitation(FB.registration),
+  facilitation(FB.publicity),
+  facilitation(FB.content),
+  facilitation(FB.timeliness),
+  facilitation(FB.food),
+  { name: FB.facilitationNotes, type: 'multilineText', description: 'Tell us more about your feedback above! (question 4)' },
+  session(FB.session1),
+  session(FB.session2),
+  score(FB.overall, 'How satisfied were you with the overall fireside chat? 1 = Very dissatisfied, 5 = Very satisfied (stars).'),
+  { name: FB.overallFeedback, type: 'multilineText', description: 'Any overall feedback for the event? (optional)' },
   { name: FB.consent, type: 'singleSelect', options: choices(['Yes', 'No'], ['greenLight2', 'redLight2']) },
   {
     name: FB.certEmail,

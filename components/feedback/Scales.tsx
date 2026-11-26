@@ -63,63 +63,153 @@ function ScaleFieldImpl(p: ScaleProps) {
 }
 export const ScaleField = memo(ScaleFieldImpl);
 
-/** Statements, each rated from "Strongly disagree" to "Strongly agree". */
-export function AgreeGrid({
+/**
+ * Rows answered on the same choices, e.g. each part of the event from 1 to 5 (or N/A). On a phone each row
+ * becomes its own card, with the meaning of its choices underneath.
+ */
+export function ChoiceGrid({
+  name,
   number,
   label,
-  labels,
-  statements,
+  hint,
+  columns,
+  rows,
   values,
   onChange,
   error,
+  legend,
+  wide = false,
 }: {
+  name: string;
   number: number;
   label: string;
-  labels: readonly string[];
-  statements: readonly { key: string; text: string }[];
+  hint?: string;
+  /** value: what is saved; label: the words (heading and screen readers); short: what the button shows. */
+  columns: readonly { value: string; label: string; short?: string }[];
+  rows: readonly { key: string; text: string }[];
   values: Record<string, string>;
   onChange: (key: string, v: string) => void;
   error?: string;
+  /** Under each row on a phone, until it is answered. */
+  legend: string;
+  /** Columns with words instead of numbers need more room. */
+  wide?: boolean;
 }) {
-  const id = fieldId('statements');
+  const id = fieldId(name);
   return (
     <div className={`field${error ? ' has-error' : ''}`}>
-      <div id={id} tabIndex={-1} role="group" aria-labelledby={`${id}-label`} aria-describedby={error ? `${id}-err` : undefined}>
+      <div id={id} tabIndex={-1} role="group" aria-labelledby={`${id}-label`} aria-describedby={[hint && `${id}-hint`, error && `${id}-err`].filter(Boolean).join(' ') || undefined}>
         <p className="label" id={`${id}-label`}>
           <LabelText label={label} number={number} required />
         </p>
-        <div className="agree">
+        {hint && (
+          <p className="field-hint" id={`${id}-hint`}>
+            {hint}
+          </p>
+        )}
+        <div className={`agree${wide ? ' is-wide' : ''}`} style={{ '--cols': columns.length } as React.CSSProperties}>
           <div className="agree-head" aria-hidden="true">
             <span />
-            {labels.map((l) => (
-              <span key={l}>{l}</span>
+            {columns.map((c) => (
+              <span key={c.value}>{c.short ? c.short : c.label}</span>
             ))}
           </div>
-          {statements.map((s, i) => {
-            const missing = Boolean(error) && !values[s.key];
+          {rows.map((r, i) => {
+            const missing = Boolean(error) && !values[r.key];
+            const chosen = columns.find((c) => c.value === values[r.key]);
             return (
-              <div key={s.key} className={`agree-row${missing ? ' is-missing' : ''}`} role="radiogroup" aria-labelledby={`${id}-${s.key}`}>
-                <p id={`${id}-${s.key}`}>
+              <div key={r.key} className={`agree-row${missing ? ' is-missing' : ''}`} role="radiogroup" aria-labelledby={`${id}-${r.key}`}>
+                <p id={`${id}-${r.key}`}>
                   <span className="agree-n">{String.fromCharCode(97 + i)}</span>
-                  {s.text}
+                  {r.text}
                 </p>
                 <div className="agree-options">
-                  {labels.map((l, n) => {
-                    const v = String(n + 1);
-                    return (
-                      <label key={v} className={`agree-step${values[s.key] === v ? ' is-checked' : ''}`} title={l}>
-                        <input type="radio" name={s.key} value={v} aria-label={l} checked={values[s.key] === v} onChange={() => onChange(s.key, v)} />
-                        <span aria-hidden="true">{v}</span>
-                      </label>
-                    );
-                  })}
+                  {columns.map((c) => (
+                    <label key={c.value} className={`agree-step${values[r.key] === c.value ? ' is-checked' : ''}`} title={c.label}>
+                      <input type="radio" name={r.key} value={c.value} aria-label={c.label} checked={values[r.key] === c.value} onChange={() => onChange(r.key, c.value)} />
+                      <span aria-hidden="true">{c.short ?? c.value}</span>
+                    </label>
+                  ))}
                 </div>
                 <p className="agree-chosen" aria-hidden="true">
-                  {values[s.key] ? labels[Number(values[s.key]) - 1] : `1 ${labels[0]} · 5 ${labels[4]}`}
+                  {chosen ? chosen.label : legend}
                 </p>
               </div>
             );
           })}
+        </div>
+      </div>
+      <FieldError id={id} error={error} />
+    </div>
+  );
+}
+
+const STAR = 'M12 2.6l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+
+/** One to five stars. */
+export function StarRating({
+  name,
+  number,
+  label,
+  hint,
+  value,
+  onChange,
+  error,
+  words,
+}: {
+  name: string;
+  number: number;
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  /** What 1 and 5 mean, for screen readers and the caption. */
+  words: readonly [string, string];
+}) {
+  const id = fieldId(name);
+  const n = Number(value) || 0;
+  return (
+    <div className={`field${error ? ' has-error' : ''}`}>
+      <div
+        role="radiogroup"
+        id={id}
+        tabIndex={-1}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={[hint && `${id}-hint`, error && `${id}-err`].filter(Boolean).join(' ') || undefined}
+        aria-required
+        aria-invalid={error ? true : undefined}
+      >
+        <p className="label" id={`${id}-label`}>
+          <LabelText label={label} number={number} required />
+        </p>
+        {hint && (
+          <p className="field-hint" id={`${id}-hint`}>
+            {hint}
+          </p>
+        )}
+        <div className="rating">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <label key={i} className={`rating-star${i <= n ? ' is-on' : ''}`}>
+              <input
+                type="radio"
+                name={name}
+                value={String(i)}
+                aria-label={i === 1 ? `1 star, ${words[0]}` : i === 5 ? `5 stars, ${words[1]}` : `${i} stars`}
+                checked={value === String(i)}
+                onChange={() => onChange(String(i))}
+              />
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d={STAR} />
+              </svg>
+              <span className="rating-n" aria-hidden="true">
+                {i}
+              </span>
+            </label>
+          ))}
+          <span className="rating-said" aria-hidden="true">
+            {n ? `${n} of 5${n === 1 ? ` · ${words[0]}` : n === 5 ? ` · ${words[1]}` : ''}` : ''}
+          </span>
         </div>
       </div>
       <FieldError id={id} error={error} />
