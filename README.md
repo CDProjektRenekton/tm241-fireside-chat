@@ -68,10 +68,10 @@ had, so nobody gets the same update twice, even if the page closes or two organi
 daily limit is reached it stops and the rest stay in line. Once an update has started going out its words are
 locked; use it as a new draft instead.
 
-## Onsite seats (65)
+## Onsite seats (80)
 
-Onsite is limited to **65 people** (`EVENT.onsiteSeats` in `lib/config.ts`); online has no limit. Each email address
-counts once, by its latest registration, so registering twice doesn't take two seats. When all 65 are taken, the
+Onsite is limited to **80 people** (`EVENT.onsiteSeats` in `lib/config.ts`); online has no limit. Each email address
+counts once, by its latest registration, so registering twice doesn't take two seats. When all 80 are taken, the
 form still shows Onsite but greyed out ("Full"), with a note to join on Zoom instead. The server checks again at the
 moment of registering, so someone who chose Onsite just before the last seat went is sent back to choose Online
 (someone who already holds a seat may register again). The dashboard's *Onsite or online* card shows the seats taken.

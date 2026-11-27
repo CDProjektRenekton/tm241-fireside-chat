@@ -23,7 +23,7 @@ export const EVENT = {
   /** Reference numbers look like TM241-FC-7KQ2MX. */
   refPrefix: 'TM241-FC',
   /** Onsite seats. Once they are taken the form only offers Online (lib/capacity.ts). */
-  onsiteSeats: 65,
+  onsiteSeats: 80,
 } as const;
 
 export const venueFull = () => `${EVENT.venue}, ${EVENT.venueCampus}`;
