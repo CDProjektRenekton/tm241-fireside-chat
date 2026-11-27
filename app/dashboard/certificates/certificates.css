@@ -1,0 +1,229 @@
+/* Certificates: the switch, the event leads' signatures, a preview, and sending the waiting ones. */
+
+.crt > .card {
+  margin-bottom: 14px;
+}
+
+.crt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.crt-under {
+  margin-top: 12px;
+}
+
+.crt-problem {
+  margin: 12px 0 0;
+  white-space: normal;
+}
+
+/* Off / On */
+.crt-switch {
+  display: inline-flex;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+}
+
+.crt-switch button {
+  min-width: 64px;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crt-switch button[aria-pressed='true'] {
+  background: rgba(94, 182, 211, 0.24);
+  color: #fff;
+}
+
+.crt-switch button:first-child[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.crt-switch button:focus-visible {
+  outline: 2px solid var(--cyan-300);
+  outline-offset: -2px;
+}
+
+/* signatures */
+.crt-sigs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.crt-sig-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--plane);
+  border: 1px solid var(--line);
+}
+
+.crt-sig-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.crt-sig-title {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* on white, the way it prints */
+.crt-sig-box {
+  display: grid;
+  place-items: center;
+  height: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px dashed rgba(11, 15, 46, 0.25);
+}
+
+.crt-sig-box img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+}
+
+.crt-sig-box span {
+  font-size: 13px;
+  color: #6b7390;
+}
+
+.crt-sig-card label.btn-mini {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-sig-card label.btn-mini input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.crt-sig-card label.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* preview */
+.crt-cert {
+  position: relative;
+  max-width: 760px;
+  border-radius: 10px;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.crt-cert > img:first-child {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.crt-cert-name {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 33%;
+  text-align: center;
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 4.2cqw;
+  color: #0b0f2e;
+}
+
+.crt-cert-sig {
+  position: absolute;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.crt-cert-gap {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(74, 169, 207, 0.9);
+  border-radius: 4px;
+  font-size: 1.3cqw;
+  color: #2f7fa2;
+}
+
+/* sending */
+.crt-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.crt-counts div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--plane);
+}
+
+.crt-counts dt {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.crt-counts dd {
+  margin: 4px 0 0;
+  font-family: var(--display);
+  font-size: 26px;
+}
+
+.crt-check {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.crt-check li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crt-check .is-ok svg {
+  color: var(--good);
+}
+
+.crt-check .is-missing svg {
+  color: #ffb3ba;
+}
+
+@media (max-width: 720px) {
+  .crt-sigs,
+  .crt-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .crt-sigs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

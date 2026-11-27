@@ -1,10 +1,12 @@
 // The Certificate of Participation: the blank template (assets/certificate/template.pdf, based on the
-// organizers' Certificate of Appreciation) with one person's name and certificate number added.
+// organizers' Certificate of Appreciation) with one person's name and certificate number added, and the
+// event leads' e-signatures when they have been uploaded (dashboard: Certificates).
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, type PDFFont, type PDFPage, rgb, StandardFonts } from 'pdf-lib';
 import { EVENT } from './config';
+import { placeSignature, SIGNATORIES, signaturePng, type Signatures } from './signatories';
 
 const DIR = path.join(process.cwd(), 'assets', 'certificate');
 const FONT_FILES = ['InterTight-ExtraBoldItalic-latin.ttf', 'InterTight-ExtraBoldItalic-latin-ext.ttf'];
@@ -71,7 +73,7 @@ function drawCentered(page: PDFPage, runs: Run[], size: number, baselineFromTop:
 export const certificateName = (name: string) => name.normalize('NFC').replace(/\s+/g, ' ').trim().toLocaleUpperCase('en-PH');
 
 /** The finished PDF for one person. */
-export async function buildCertificate({ name, number }: { name: string; number: string }): Promise<Buffer> {
+export async function buildCertificate({ name, number, signatures }: { name: string; number: string; signatures?: Partial<Signatures> }): Promise<Buffer> {
   const { template, fonts, covers } = await files();
   const pdf = await PDFDocument.load(template);
   pdf.registerFontkit(fontkit);
@@ -96,6 +98,19 @@ export async function buildCertificate({ name, number }: { name: string; number:
       if (!best || size > best.size + 0.01 || (Math.abs(size - best.size) <= 0.01 && evenness < bestEven)) best = { lines, size };
     }
     best!.lines.forEach((l, i) => drawCentered(page, l, best!.size, TWO_LINES.baselines[i]));
+  }
+
+  for (const s of SIGNATORIES) {
+    const png = signaturePng(signatures?.[s.key]);
+    if (!png) continue;
+    try {
+      const img = await pdf.embedPng(png);
+      const at = placeSignature(s.box, img.width, img.height);
+      page.drawImage(img, { x: at.left, y: page.getHeight() - at.top - at.height, width: at.width, height: at.height });
+    } catch (e) {
+      // A damaged image never stops the certificate; it is printed without that signature.
+      console.error(`[certificate] signature of ${s.name} could not be used:`, e instanceof Error ? e.message : e);
+    }
   }
 
   const small = await pdf.embedFont(StandardFonts.Helvetica);

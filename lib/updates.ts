@@ -97,7 +97,7 @@ export const PRESETS: { key: string; label: string; content: Partial<UpdateConte
     content: {
       subject: `Thank you for joining the ${EVENT.series}`,
       headline: 'Thank you for joining us',
-      message: `Thank you for being part of the **${EVENT.series}: ${EVENT.title}**. We'd love to hear what you thought. The feedback form takes about three minutes, and your **Certificate of Participation** is ready as soon as you finish.`,
+      message: `Thank you for being part of the **${EVENT.series}: ${EVENT.title}**. We'd love to hear what you thought. The feedback form takes about three minutes, and your **Certificate of Participation** is emailed to you after you answer.`,
       buttonLabel: 'Give feedback and get my certificate',
       buttonUrl: 'https://tm241-fireside-chat.vercel.app/feedback?ref={ref}',
       audience: 'Checked in',

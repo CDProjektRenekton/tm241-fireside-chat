@@ -3,6 +3,7 @@ import Image from 'next/image';
 import EventLogo from '@/components/EventLogo';
 import FeedbackForm from '@/components/feedback/FeedbackForm';
 import SpaceBackground from '@/components/SpaceBackground';
+import { getCertificateSettings } from '@/lib/airtable';
 import { EVENT } from '@/lib/config';
 import './feedback.css';
 
@@ -17,6 +18,9 @@ export const dynamic = 'force-dynamic';
 /** The feedback form, open at any time; finishing it gives the Certificate of Participation. */
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ ref?: string | string[] }> }) {
   const { ref } = await searchParams;
+  const auto = await getCertificateSettings()
+    .then((s) => s.auto)
+    .catch(() => false);
   return (
     <>
       <SpaceBackground still />
@@ -41,7 +45,10 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
             <EventLogo variant="pass" />
           </div>
           <h1 id="feedback-title">Feedback form</h1>
-          <p>Tell us how it went. It takes about three minutes, and your Certificate of Participation is ready as soon as you finish.</p>
+          <p>
+            Tell us how it went. It takes about three minutes, and your Certificate of Participation{' '}
+            {auto ? 'is ready as soon as you finish.' : 'will be emailed to you once the event leads have signed it.'}
+          </p>
         </section>
 
         <FeedbackForm initialWho={typeof ref === 'string' ? ref.slice(0, 40) : ''} />

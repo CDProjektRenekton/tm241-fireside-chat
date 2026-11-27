@@ -1,6 +1,22 @@
 import 'server-only';
 import { randomInt } from 'node:crypto';
-import { type CertEmailState, F, F_DETAIL, FB, FEEDBACK_SPECS, FEEDBACK_TABLE, FIELD_SPECS, type FieldSpec, U, UPDATE_SPECS, UPDATES_TABLE } from './fields';
+import {
+  type CertEmailState,
+  CS,
+  F,
+  F_DETAIL,
+  FB,
+  FEEDBACK_SPECS,
+  FEEDBACK_TABLE,
+  FIELD_SPECS,
+  type FieldSpec,
+  SETTINGS_SPECS,
+  SETTINGS_TABLE,
+  U,
+  UPDATE_SPECS,
+  UPDATES_TABLE,
+} from './fields';
+import { NO_SIGNATURES, SIGNATORY_KEYS, type Signatures } from './signatories';
 import { DETAIL_KEYS, type RoleDetails } from './roles';
 import { REF_ALPHABET } from './ticket';
 import type { Registration, SchemaStatus } from './types';
@@ -137,6 +153,7 @@ function registrationsTable(tables: MetaTable[]) {
 const EXTRA_TABLES: { name: string; description: string; specs: FieldSpec[] }[] = [
   { name: UPDATES_TABLE, description: 'Email updates written on the dashboard (Email updates page): drafts and what was sent.', specs: UPDATE_SPECS },
   { name: FEEDBACK_TABLE, description: 'Answers to the feedback form (/feedback), with the certificate each one was given.', specs: FEEDBACK_SPECS },
+  { name: SETTINGS_TABLE, description: 'Automatic certificates on or off, and the signatures (dashboard: Certificates).', specs: SETTINGS_SPECS },
 ];
 
 /** Tables that don't exist yet, and columns the others still need. */
@@ -583,6 +600,83 @@ export async function setCertificateEmail(id: string, state: CertEmailState): Pr
   if (!RECORD_ID.test(id)) return;
   await request(`/${config().baseId}/${FEEDBACK_PATH}/${id}`, {
     method: 'PATCH',
-    body: { fields: { [FB.certEmail]: state, ...(state === 'Sent' || state === 'Sending' ? { [FB.certEmailAt]: new Date().toISOString() } : {}) } },
+    // typecast: a table made before "Waiting" existed gets that choice added
+    body: { fields: { [FB.certEmail]: state, ...(state === 'Sent' || state === 'Sending' ? { [FB.certEmailAt]: new Date().toISOString() } : {}) }, typecast: true },
   });
 }
+
+/** Every answered feedback form (what the certificate needs), oldest first. */
+export async function listFeedback(): Promise<FeedbackRecord[]> {
+  const out: FeedbackRecord[] = [];
+  let offset: string | undefined;
+  try {
+    do {
+      const q = new URLSearchParams({ pageSize: '100' });
+      for (const f of [FB.number, FB.ref, FB.name, FB.email, FB.certEmail, FB.certEmailAt, FB.submittedAt]) q.append('fields[]', f);
+      if (offset) q.set('offset', offset);
+      const page = await request<{ records: AirtableRecord[]; offset?: string }>(`/${config().baseId}/${FEEDBACK_PATH}?${q}`);
+      out.push(...page.records.filter((r) => str(r.fields[FB.number])).map(toFeedback));
+      offset = page.offset;
+    } while (offset);
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- certificate settings
+
+const SETTINGS_PATH = encodeURIComponent(SETTINGS_TABLE);
+const SETTINGS_ROW = 'Certificate';
+
+export interface CertificateSettings {
+  /** Make and email the certificate as soon as someone finishes the form. Off until turned on. */
+  auto: boolean;
+  signatures: Signatures;
+  updatedAt: string;
+}
+
+async function settingsRow(): Promise<AirtableRecord | null> {
+  try {
+    const page = await request<{ records: AirtableRecord[] }>(`/${config().baseId}/${SETTINGS_PATH}?pageSize=10`);
+    return page.records.find((r) => str(r.fields[CS.setting]) === SETTINGS_ROW) ?? null;
+  } catch (e) {
+    // No table yet: nothing has been set, so certificates wait and there are no signatures.
+    if (e instanceof AirtableError && SELF_HEAL_ERRORS.has(e.type)) return null;
+    throw e;
+  }
+}
+
+const toSettings = (r: AirtableRecord | null): CertificateSettings => ({
+  auto: r?.fields[CS.auto] === true,
+  signatures: Object.fromEntries(SIGNATORY_KEYS.map((k) => [k, str(r?.fields[CS.signature[k]]) || null])) as Signatures,
+  updatedAt: str(r?.fields[CS.updatedAt]),
+});
+
+export const getCertificateSettings = async (): Promise<CertificateSettings> => toSettings(await settingsRow());
+
+/** Changes the switch and/or signatures (null removes one). Makes the table and its row the first time. */
+export async function saveCertificateSettings(change: { auto?: boolean; signatures?: Partial<Signatures> }): Promise<CertificateSettings> {
+  const fields: Fields = { [CS.updatedAt]: new Date().toISOString() };
+  if (change.auto !== undefined) fields[CS.auto] = change.auto;
+  for (const [k, v] of Object.entries(change.signatures ?? {})) fields[CS.signature[k as keyof Signatures]] = v ?? '';
+  const write = async () => {
+    const row = await settingsRow();
+    const { baseId } = config();
+    if (row) return request<AirtableRecord>(`/${baseId}/${SETTINGS_PATH}/${row.id}`, { method: 'PATCH', body: { fields } });
+    const made = await request<{ records: AirtableRecord[] }>(`/${baseId}/${SETTINGS_PATH}`, {
+      method: 'POST',
+      body: { records: [{ fields: { [CS.setting]: SETTINGS_ROW, ...fields } }] },
+    });
+    return made.records[0];
+  };
+  try {
+    return toSettings(await write());
+  } catch (e) {
+    if (!(e instanceof AirtableError) || !SELF_HEAL_ERRORS.has(e.type)) throw e;
+    await ensureExtras(await allTables());
+    return toSettings(await write());
+  }
+}
+
+export { NO_SIGNATURES };

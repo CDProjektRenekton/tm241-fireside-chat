@@ -1,4 +1,4 @@
-import { setCertificateEmail } from '@/lib/airtable';
+import { getCertificateSettings, setCertificateEmail } from '@/lib/airtable';
 import { certificateFile, failure, feedbackOf, findPerson, NOT_FOUND_MESSAGE, queueCertificateEmail, reply } from '@/lib/feedback-server';
 import { maskEmail } from '@/lib/ticket';
 
@@ -10,7 +10,8 @@ const WAIT_MS = 10 * 60_000;
 
 /**
  * Someone who already answered wants their certificate again. It is emailed to the registered address
- * (at most every ten minutes); with their reference number they can also download it here.
+ * (at most every ten minutes); with their reference number they can also download it here. If it is
+ * still waiting (automatic certificates were off when they answered), they are told so.
  */
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { who?: unknown };
@@ -20,7 +21,11 @@ export async function POST(req: Request) {
     const done = await feedbackOf(person);
     if (!done) return reply({ message: 'Please answer the feedback form first.' }, 404);
 
-    const { pdf, file } = await certificateFile(done);
+    // Not made yet: it is emailed when the organizers send the waiting certificates.
+    if (done.certEmail === 'Waiting') return reply({ ok: true, waiting: true, number: done.number, email: maskEmail(done.email) });
+
+    const settings = await getCertificateSettings();
+    const { pdf, file } = await certificateFile(done, settings.signatures);
     const recently = done.certEmailAt && Date.now() - Date.parse(done.certEmailAt) < WAIT_MS && done.certEmail !== 'Failed';
     let emailed = false;
     if (!recently) {
@@ -32,7 +37,7 @@ export async function POST(req: Request) {
       number: done.number,
       email: emailed ? maskEmail(done.email) : null,
       ...(recently ? { recently: maskEmail(done.email) } : {}),
-      ...(person.by === 'ref' ? { name: done.name, file } : {}),
+      ...(person.by === 'ref' ? { name: done.name, file, signatures: settings.signatures } : {}),
     });
   } catch (e) {
     return failure('feedback/again', e);

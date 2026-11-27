@@ -16,6 +16,7 @@ import {
   SESSIONS,
   validateFeedback,
 } from '@/lib/feedback';
+import { CERT_PAGE, SIGNATORIES } from '@/lib/signatories';
 import type { FieldErrors } from '@/lib/types';
 import { LIMITS } from '@/lib/validation';
 import { CardChoice, fieldId, TextField } from '../form/Fields';
@@ -55,6 +56,10 @@ interface Certificate {
   /** It was emailed only minutes ago, so it was not sent again. */
   recently?: string;
   again?: boolean;
+  /** Not made yet: it will be emailed once the event leads have signed. */
+  waiting?: boolean;
+  /** The signatures to show on the picture of the certificate. */
+  signatures?: Partial<Record<string, string | null>>;
 }
 
 type Answered = { email: string; by: 'email' | 'ref' };
@@ -208,7 +213,7 @@ export default function FeedbackForm({ initialWho }: { initialWho: string }) {
       }
       throw new Error(json.message || 'Your feedback could not be sent. Please try again.');
     }
-    setCertificate({ number: json.number, name: json.name, email: json.email, file: json.file });
+    setCertificate({ number: json.number, name: json.name, email: json.email, file: json.file, waiting: json.waiting, signatures: json.signatures });
     try {
       sessionStorage.removeItem(DRAFT_KEY);
     } catch {
@@ -244,7 +249,7 @@ export default function FeedbackForm({ initialWho }: { initialWho: string }) {
     try {
       const { json } = await post<Certificate & { ok?: boolean }>('/api/feedback/again', { who: data.who });
       if (!json.ok) throw new Error(json.message || 'Please try again.');
-      setCertificate({ number: json.number, name: json.name ?? '', email: json.email, file: json.file, recently: json.recently, again: true });
+      setCertificate({ number: json.number, name: json.name ?? '', email: json.email, file: json.file, recently: json.recently, again: true, waiting: json.waiting, signatures: json.signatures });
       toTop();
     } catch (err) {
       setProblem(oops(err));
@@ -254,6 +259,31 @@ export default function FeedbackForm({ initialWho }: { initialWho: string }) {
   }
 
   // ------------------------------------------------------------ certificate
+
+  if (certificate?.waiting) {
+    const c = certificate;
+    return (
+      <section className="form-card feedback-done" ref={cardRef} aria-live="polite">
+        <p className="success-script">Thank you</p>
+        <h2 className="success-title">{c.again ? 'Not ready yet' : 'Your answers are in'}</h2>
+        <p className="success-lead">
+          {c.again ? `Your Certificate of Participation is still being signed.` : `Thank you for sharing your feedback on ${EVENT.title}. It helps us make the next conversation better.`}
+        </p>
+        <ul className="success-facts">
+          <li>
+            <span>Certificate</span>
+            <div>
+              Your Certificate of Participation will be emailed to <b>{c.email}</b> once the event leads have signed it. No need to answer again.
+            </div>
+          </li>
+          <li>
+            <span>Number</span>
+            {c.number}
+          </li>
+        </ul>
+      </section>
+    );
+  }
 
   if (certificate) {
     const c = certificate;
@@ -272,6 +302,23 @@ export default function FeedbackForm({ initialWho }: { initialWho: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/certificate-preview.jpg" alt="" width={1120} height={792} />
             <CertificateName name={c.name} />
+            {SIGNATORIES.map((s) =>
+              c.signatures?.[s.key] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={s.key}
+                  className="cert-sig"
+                  src={c.signatures[s.key]!}
+                  alt=""
+                  style={{
+                    left: `${(s.box.left / CERT_PAGE.width) * 100}%`,
+                    top: `${(s.box.top / CERT_PAGE.height) * 100}%`,
+                    width: `${(s.box.width / CERT_PAGE.width) * 100}%`,
+                    height: `${(s.box.height / CERT_PAGE.height) * 100}%`,
+                  }}
+                />
+              ) : null,
+            )}
             <span className="cert-no">Certificate No. {c.number}</span>
           </div>
         )}

@@ -389,6 +389,13 @@
   color: #0b0f2e;
 }
 
+/* an event lead's e-signature, resting on their name */
+.cert-sig {
+  position: absolute;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
 .cert-no {
   position: absolute;
   left: 0;

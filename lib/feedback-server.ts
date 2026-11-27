@@ -5,6 +5,7 @@ import { AirtableError, ConfigError, findFeedback, listRegistrations, setCertifi
 import { buildCertificate, certificateFileName } from './certificate';
 import { describeEmailError, emailConfigured, sendCertificateEmail, siteUrl } from './email/send';
 import { parseWho } from './feedback';
+import type { Signatures } from './signatories';
 import { REF_ALPHABET } from './ticket';
 import type { Registration } from './types';
 
@@ -52,8 +53,8 @@ export function makeCertificateNumber() {
   return `FC-COP-${s}`;
 }
 
-export async function certificateFile(f: { name: string; number: string }) {
-  const pdf = await buildCertificate(f);
+export async function certificateFile(f: { name: string; number: string }, signatures?: Partial<Signatures>) {
+  const pdf = await buildCertificate({ name: f.name, number: f.number, signatures });
   return { pdf, file: { name: certificateFileName(f.name), base64: pdf.toString('base64') } };
 }
 

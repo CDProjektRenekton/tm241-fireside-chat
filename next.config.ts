@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     '/api/email/**/*': ['./public/email/**/*'],
     '/api/feedback': ['./public/email/**/*', './assets/certificate/**/*'],
     '/api/feedback/**/*': ['./public/email/**/*', './assets/certificate/**/*'],
+    '/api/certificates': ['./public/email/**/*', './assets/certificate/**/*'],
+    '/api/certificates/**/*': ['./public/email/**/*', './assets/certificate/**/*'],
   },
   async headers() {
     return [

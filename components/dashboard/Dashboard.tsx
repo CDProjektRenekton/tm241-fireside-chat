@@ -33,6 +33,7 @@ import {
   ScanQr,
   Search,
   Sheet,
+  Badge,
 } from '../Icons';
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import PrintReport from './PrintReport';
@@ -192,6 +193,10 @@ export default function Dashboard() {
             <a className="head-btn" href="/dashboard/updates">
               <Mail width={18} height={18} />
               Email updates
+            </a>
+            <a className="head-btn" href="/dashboard/certificates">
+              <Badge width={18} height={18} />
+              Certificates
             </a>
             <a className="head-btn" href="/feedback" target="_blank" rel="noopener">
               <ClipboardList width={18} height={18} />

@@ -101,8 +101,9 @@ to the registered address (there is no separate try-out mode; to try it, use you
    (the only optional one).
 3. **Consent:** the data privacy consent.
 
-Then the certificate appears with a **Download** button and is emailed to the **registered** address, never to one
-typed on the form. One answer per person. Coming back later, the email address alone can only have the certificate
+Then, if automatic certificates are on (see *Certificates* below), the certificate appears with a **Download**
+button and is emailed to the **registered** address, never to one typed on the form; if they are off, the answers
+are saved and the certificate follows later. One answer per person. Coming back later, the email address alone can only have the certificate
 emailed again (at most every ten minutes); the reference number can also download it.
 
 Answers are kept in the Airtable table **Feedback**, one column per question, numbered like the Google Form
@@ -116,6 +117,23 @@ with each person's own details filled in (`/feedback?ref={ref}`).
 
 The certificate is `assets/certificate/template.pdf` (A4 landscape, based on the Certificate of Appreciation);
 `lib/certificate.ts` prints the name and number on it.
+
+## Certificates (`/dashboard/certificates`)
+
+For organizers (dashboard password). **Automatic certificates** start **off**:
+
+- **Off:** answers to the feedback form are saved, and people are told their Certificate of Participation will be
+  emailed once the event leads have signed it. Their row in **Feedback** says *Certificate Email = Waiting*.
+- **On:** the certificate is made, shown for download and emailed as soon as someone finishes the form.
+
+**Signatures:** upload a photo or scan of each event lead's signature (dark ink on white paper) or a PNG with a
+transparent background. The page removes the paper and trims it in the browser, then saves it in the Airtable
+table **Certificate Settings**. It prints above the event lead's name. *How it looks* shows a sample, and *Open a
+sample PDF* the real thing.
+
+**Sending the waiting ones:** *Send N certificates* asks first, then makes and emails each person's certificate
+(with the signatures as they are then), a few at a time. Nobody gets one twice; refused addresses can be tried
+again. Turning automatic certificates on does not email the waiting ones by itself.
 
 ## Confirmation email
 

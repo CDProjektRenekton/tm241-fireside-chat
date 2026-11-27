@@ -1,5 +1,6 @@
 import { AFFILIATIONS, AGE_GROUPS, ATTENDANCE_MODES, SEXES, TOPICS } from './config';
 import { FACILITATION_VALUES, SESSION_VALUES } from './feedback';
+import { SIGNATORIES, type SignatoryKey } from './signatories';
 import {
   DEGREE_LEVELS,
   type DetailKey,
@@ -264,7 +265,8 @@ export const FB = {
   certEmailAt: 'Certificate Emailed At',
 } as const;
 
-export const CERT_EMAIL_STATES = ['Sending', 'Sent', 'Failed', 'Not set up'] as const;
+/** Waiting = answered while automatic certificates were off; sent from the dashboard's Certificates page. */
+export const CERT_EMAIL_STATES = ['Waiting', 'Sending', 'Sent', 'Failed', 'Not set up'] as const;
 export type CertEmailState = (typeof CERT_EMAIL_STATES)[number];
 
 const score = (name: string, description: string): FieldSpec => ({ name, type: 'number', description, options: { precision: 0 } });
@@ -310,10 +312,39 @@ export const FEEDBACK_SPECS: FieldSpec[] = [
   {
     name: FB.certEmail,
     type: 'singleSelect',
-    description: 'The certificate email. Failed = the mail server refused it; they can still download it or ask for it again.',
-    options: choices(CERT_EMAIL_STATES, ['yellowLight2', 'greenLight2', 'redLight2', 'grayLight2']),
+    description:
+      'The certificate email. Waiting = not made yet (automatic certificates were off); send it from the Certificates page. Failed = the mail server refused it.',
+    options: choices(CERT_EMAIL_STATES, ['blueLight2', 'yellowLight2', 'greenLight2', 'redLight2', 'grayLight2']),
   },
   { name: FB.certEmailAt, type: 'dateTime', options: MANILA_TIME },
+];
+
+// ---------------------------------------------------------------- certificate settings
+
+export const SETTINGS_TABLE = 'Certificate Settings';
+
+/** One row ("Certificate"): the switch on the dashboard's Certificates page and the signatures. */
+export const CS = {
+  setting: 'Setting',
+  auto: 'Automatic Certificates',
+  signature: Object.fromEntries(SIGNATORIES.map((s) => [s.key, `Signature - ${s.name}`])) as Record<SignatoryKey, string>,
+  updatedAt: 'Updated At',
+} as const;
+
+export const SETTINGS_SPECS: FieldSpec[] = [
+  text(CS.setting, 'Always "Certificate". Changed on the dashboard\'s Certificates page.'),
+  {
+    name: CS.auto,
+    type: 'checkbox',
+    description: 'On: a certificate is made and emailed as soon as someone finishes the feedback form. Off: they wait until it is sent from the dashboard.',
+    options: CHECK,
+  },
+  ...SIGNATORIES.map((s) => ({
+    name: CS.signature[s.key],
+    type: 'multilineText',
+    description: `${s.name}'s e-signature, as a PNG image (data URL) uploaded on the Certificates page.`,
+  })),
+  { name: CS.updatedAt, type: 'dateTime', options: MANILA_TIME },
 ];
 
 /** Email Updates schema, in column order. The first entry is the primary field. */

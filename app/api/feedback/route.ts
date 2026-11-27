@@ -1,4 +1,4 @@
-import { createFeedback } from '@/lib/airtable';
+import { createFeedback, getCertificateSettings } from '@/lib/airtable';
 import { FB } from '@/lib/fields';
 import { attendanceModeOf } from '@/lib/config';
 import { FACILITATION, normalizeFeedback, SESSIONS, validateFeedback } from '@/lib/feedback';
@@ -66,11 +66,18 @@ export async function POST(req: Request) {
       const v = fields[k];
       if (v === '' || (Array.isArray(v) && v.length === 0)) delete fields[k];
     }
+    // Automatic certificates off (e.g. the signatures aren't in yet): the answers are kept and the
+    // certificate is sent later from the dashboard's Certificates page.
+    const settings = await getCertificateSettings();
+    if (!settings.auto) {
+      await createFeedback({ ...fields, [FB.certEmail]: 'Waiting' });
+      return reply({ ok: true, waiting: true, number, name: d.name, email: maskEmail(reg.email) });
+    }
     // Made first, so nobody's answers are saved without a certificate to hand over.
-    const { pdf, file } = await certificateFile({ name: d.name, number });
+    const { pdf, file } = await certificateFile({ name: d.name, number }, settings.signatures);
     const saved = await createFeedback(fields);
     const emailed = queueCertificateEmail({ name: d.name, email: reg.email, number }, pdf, req, saved.id);
-    return reply({ ok: true, number, name: d.name, email: emailed ? maskEmail(reg.email) : null, file });
+    return reply({ ok: true, number, name: d.name, email: emailed ? maskEmail(reg.email) : null, file, signatures: settings.signatures });
   } catch (e) {
     return failure('feedback', e);
   }
