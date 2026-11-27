@@ -34,6 +34,7 @@ import {
   Search,
   Sheet,
   Badge,
+  Users,
 } from '../Icons';
 import { BarList, ColumnChart, DailyTable, pct, StatTile } from './Charts';
 import PrintReport from './PrintReport';
@@ -189,6 +190,10 @@ export default function Dashboard() {
             <a className="head-btn" href="/checkin">
               <ScanQr width={18} height={18} />
               Check-in desk
+            </a>
+            <a className="head-btn" href="/dashboard/checkins">
+              <Users width={18} height={18} />
+              Arrivals
             </a>
             <a className="head-btn" href="/dashboard/updates">
               <Mail width={18} height={18} />
